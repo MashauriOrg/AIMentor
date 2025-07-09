@@ -1,29 +1,22 @@
-TEXT:Welcome, team! This is your Kickoff Meeting with your AI mentor. I'm here to guide your journey, help you stay on track, and answer questions based on world-class entrepreneurial resources.
----
-TEXT:First, let's get to know your team and your project.
----
-INPUT:Please list the names and email addresses of your team members.
----
-INPUT:What problem are you trying to solve? (Briefly describe)
----
-INPUT:What inspired you to work on this problem?
----
-TEXT:Great! Now, let’s clarify what you can expect from your AI mentor:
-- I can guide you through the structured meetings and remind you of your commitments.
-- I can answer general entrepreneurship questions, drawing from your program books.
-- I remember your answers and progress, so you can pick up where you left off.
-- I don’t have live market data or access to the internet.
-- I don’t replace your own creativity or judgement—I'm a support and guide!
----
-TEXT:During these meetings, you can always use the **Ask the Mentor** box below to ask anything you like.
----
-TEXT:To get the most out of your AI mentor:
-- Be honest with your answers
-- Come prepared to discuss and reflect as a team
-- Take notes if you want to remember insights or next steps
----
-TEXT:Do you have any immediate questions about how this AI mentor works, or about your program? Ask now, or use the chat box below at any time!
----
-FORM:Please write any feedback or requests you have for this meeting, or for future meetings. (Optional)
----
-TEXT:Thank you! You’ve completed Meeting 1. See you
+Step 1: Welcome and Overview
+
+Welcome to your first session! In this meeting:
+- We’ll set expectations about the project and the AI mentor role.
+- Your team will introduce themselves.
+- We’ll discuss how you’ll work together.
+
+Step 2: Team Introductions
+
+How many members are in your team?:int
+
+Step 3: Enter Team Member Details
+
+ENTER_TEAM_MEMBERS
+
+Step 4: AI Mentor Guidelines
+
+Your AI mentor is here to help facilitate, advise, and nudge you forward, but you drive the work!
+
+Step 5: Meeting Wrap-up
+
+Thanks! Please fill in the short post-meeting reflection form at: [your-link-here]

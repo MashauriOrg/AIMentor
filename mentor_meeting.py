@@ -1,93 +1,159 @@
 import streamlit as st
 import os
 
-# ---- TEAM/PASSWORD ----
-teams = ["Team 1", "Team 2", "Team 3", "Team 4", "Team 5"]
-team_passwords = {
-    "Team 1": "apple123",
-    "Team 2": "banana234",
-    "Team 3": "cherry345",
-    "Team 4": "date456",
-    "Team 5": "elder567"
+# --- Settings ---
+SCRIPT_FOLDER = "meeting_scripts"
+
+TEAM_PASSWORDS = {
+    "Team Alpha": "alpha123",
+    "Team Beta": "beta456",
+    "Team Gamma": "gamma789",
+    # Add more teams here!
 }
-team = st.selectbox("Select your team:", teams)
-password = st.text_input("Enter your team password:", type="password")
 
-# Script location
-script_file = "meeting_scripts/meeting_1_kickoff.txt"
+# --- Helpers ---
+def get_meeting_scripts():
+    return [f for f in os.listdir(SCRIPT_FOLDER) if f.endswith('.txt')]
 
-if password != team_passwords[team]:
-    if password:
-        st.error("Incorrect password. Please try again.")
+def next_step():
+    st.session_state.step += 1
+
+def prev_step():
+    if st.session_state.step > 0:
+        st.session_state.step -= 1
+
+# --- Main App ---
+
+st.set_page_config(page_title="AI Mentor Meeting")
+st.title("🤖 AI Mentor - Team Meeting")
+
+# 1. Team selection and password
+team_names = list(TEAM_PASSWORDS.keys())
+team = st.selectbox("Select your team:", team_names)
+password = st.text_input("Team password:", type="password")
+if password != TEAM_PASSWORDS[team]:
+    st.warning("Enter the correct password for your team to proceed.")
     st.stop()
-else:
-    st.success("Access granted.")
 
-# ---- Script Loading ----
-if not os.path.exists(script_file):
-    st.error(f"Script file '{script_file}' not found!")
+st.success(f"Welcome, {team}! Let's start your session.")
+
+# 2. Meeting script selection
+scripts = get_meeting_scripts()
+if not scripts:
+    st.error("No meeting scripts found! Add .txt files to the meeting_scripts/ folder.")
     st.stop()
-with open(script_file, "r", encoding="utf-8") as f:
-    lines = [line.strip() for line in f.read().split('---') if line.strip()]
+script_file = st.selectbox("Choose your meeting:", scripts)
 
-# ---- Session State ----
-if "meeting_step" not in st.session_state or st.session_state.get("team") != team:
-    st.session_state.meeting_step = 0
-    st.session_state.team = team
-if "inputs" not in st.session_state or st.session_state.get("team") != team:
-    st.session_state.inputs = {}
-if "mentor_chat" not in st.session_state or st.session_state.get("team") != team:
-    st.session_state.mentor_chat = []
+# 3. Load script and initialize session state
+with open(os.path.join(SCRIPT_FOLDER, script_file), "r") as f:
+    lines = [l.strip() for l in f.readlines() if l.strip()]
 
-# ---- Meeting Navigation ----
-st.header(f"Mentor Meeting: {team}")
+if "step" not in st.session_state:
+    st.session_state.step = 0
+if "inputs" not in st.session_state:
+    st.session_state.inputs = []
+if "members" not in st.session_state:
+    st.session_state.members = []
+if "member_index" not in st.session_state:
+    st.session_state.member_index = 0
 
-step = st.session_state.meeting_step
-script_block = lines[step].strip() if step < len(lines) else None
+step = st.session_state.step
 
-# --- Show main script step ---
-if script_block:
-    if script_block.startswith("INPUT:"):
-        label = script_block[6:].strip()
-        value = st.text_input(label, value=st.session_state.inputs.get(label, ""), key=f"input_{step}")
-        if st.button("Next"):
-            st.session_state.inputs[label] = value
-            st.session_state.meeting_step += 1
-        if st.button("Back") and step > 0:
-            st.session_state.meeting_step -= 1
-    elif script_block.startswith("FORM:"):
-        st.subheader("Feedback Form")
-        feedback = st.text_area("Feedback:", value=st.session_state.inputs.get("Feedback", ""), key=f"form_{step}")
-        if st.button("Submit"):
-            st.session_state.inputs["Feedback"] = feedback
-            st.success("Thank you for your feedback!")
-            st.session_state.meeting_step += 1
-        if st.button("Back") and step > 0:
-            st.session_state.meeting_step -= 1
+# --- Main loop ---
+while step < len(lines):
+    content = lines[step]
+    # --- Multi-member entry block ---
+    if content.startswith("ENTER_TEAM_MEMBERS"):
+        # Assume previous step asked for number of members
+        num_members = st.session_state.inputs[-1] if st.session_state.inputs else 1
+        try:
+            num_members = int(num_members)
+        except:
+            num_members = 1
+
+        idx = st.session_state.member_index
+
+        if idx < num_members:
+            key_prefix = f"member_{idx}_"
+            name = st.session_state.get(key_prefix + "name", "")
+            email = st.session_state.get(key_prefix + "email", "")
+            reason = st.session_state.get(key_prefix + "reason", "")
+            objective = st.session_state.get(key_prefix + "objective", "")
+
+            st.subheader(f"Team Member {idx+1}")
+            name = st.text_input("Full name", value=name, key=key_prefix + "name")
+            email = st.text_input("Email", value=email, key=key_prefix + "email")
+            reason = st.text_area("Why do you want to work on this problem?", value=reason, key=key_prefix + "reason")
+            objective = st.text_area("Your objective for being part of the team/USSAVI project?", value=objective, key=key_prefix + "objective")
+
+            col1, col2 = st.columns([1,1])
+            if col1.button("Save Member", key=f"save_{idx}"):
+                st.session_state.members.append({
+                    "Name": name,
+                    "Email": email,
+                    "Reason": reason,
+                    "Objective": objective,
+                })
+                st.session_state.member_index += 1
+                # Remove keys for next round (avoids overwrite)
+                for k in ["name", "email", "reason", "objective"]:
+                    st.session_state.pop(key_prefix + k, None)
+                st.rerun()
+            if col2.button("Back", key=f"back_{step}_{idx}"):
+                if idx > 0:
+                    st.session_state.member_index -= 1
+                    st.session_state.members.pop()
+                    # Remove keys for previous member
+                    prev_prefix = f"member_{st.session_state.member_index}_"
+                    for k in ["name", "email", "reason", "objective"]:
+                        st.session_state.pop(prev_prefix + k, None)
+                    st.rerun()
+            break  # Don't advance to next step yet
+        else:
+            st.write("All members entered!")
+            for i, m in enumerate(st.session_state.members, 1):
+                st.markdown(f"**{i}. {m['Name']}** — {m['Email']}  \n_Reason_: {m['Reason']}  \n_Objective_: {m['Objective']}")
+            if st.button("Continue to next step"):
+                st.session_state.member_index = 0
+                next_step()
+                st.rerun()
+            break
+    # --- Standard script logic ---
+    elif content.lower().startswith("step"):
+        st.subheader(content)
+        if st.button("Next", key=f"next_{step}"):
+            next_step()
+            st.rerun()
+        if step > 0 and st.button("Back", key=f"back_{step}"):
+            prev_step()
+            st.rerun()
+        break
+    elif content.endswith(":"):
+        user_input = st.text_input(content, key=f"input_{step}")
+        if st.button("Save & Next", key=f"save_next_{step}"):
+            st.session_state.inputs.append(user_input)
+            next_step()
+            st.rerun()
+        if step > 0 and st.button("Back", key=f"back_{step}"):
+            prev_step()
+            st.rerun()
+        break
     else:
-        st.write(script_block)
-        if st.button("Next"):
-            st.session_state.meeting_step += 1
-        if st.button("Back") and step > 0:
-            st.session_state.meeting_step -= 1
-else:
-    st.success("Meeting complete!")
-    st.write("Your saved answers:")
-    st.write(st.session_state.inputs)
-    if st.button("Restart"):
-        st.session_state.meeting_step = 0
-        st.session_state.inputs = {}
+        st.markdown(content)
+        if st.button("Next", key=f"next_{step}"):
+            next_step()
+            st.rerun()
+        if step > 0 and st.button("Back", key=f"back_{step}"):
+            prev_step()
+            st.rerun()
+        break
 
-# ---- Mentor Q&A Interactivity ----
-st.markdown("---")
-st.subheader("Ask the Mentor (general questions)")
-q = st.text_input("Type a question for your mentor:", key="mentorq")
-if st.button("Ask Mentor"):
-    # Simulated mentor reply (replace with book Q&A)
-    answer = f"Mentor says: Sorry, Q&A with books not implemented yet (demo response for: {q})"
-    st.session_state.mentor_chat.append(("You", q))
-    st.session_state.mentor_chat.append(("Mentor", answer))
-if st.session_state.mentor_chat:
-    for who, msg in st.session_state.mentor_chat:
-        st.write(f"**{who}:** {msg}")
-
+if step >= len(lines):
+    st.success("Meeting complete! Thanks for participating.")
+    st.write("Your session inputs:")
+    for i, inp in enumerate(st.session_state.inputs, 1):
+        st.write(f"{i}. {inp}")
+    if st.session_state.members:
+        st.write("Team Members Entered:")
+        for i, m in enumerate(st.session_state.members, 1):
+            st.markdown(f"**{i}. {m['Name']}** — {m['Email']}  \n_Reason_: {m['Reason']}  \n_Objective_: {m['Objective']}")
