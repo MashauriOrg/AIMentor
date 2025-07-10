@@ -11,6 +11,9 @@ mentorenv/
 venv/
 .env/
 
+# ignore FAISS index and numpy dumps
+faiss_index/
+
 # macOS system files
 .DS_Store
 
