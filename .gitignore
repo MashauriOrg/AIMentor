@@ -19,3 +19,4 @@ faiss_index/
 
 # Streamlit static/work dirs (if any)
 .streamlit/
+faiss_index/
