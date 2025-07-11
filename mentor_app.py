@@ -112,21 +112,48 @@ st.write(AGENDA[i]["prompt"])
 # ── INPUT & OPENAI CHAT ──
 user_input = st.text_area("Your response here", key=f"resp_{i}")
 if st.button("Next"):
-    # Special case: first step is just a confirmation, not real chat
-    if i == 0 and user_input.strip().lower() == "Yes":
-        # Advance immediately, but do NOT record confirmation in history
-        st.session_state.step = 1
-    else:
-        # 1) Append user message
-        st.session_state.history.append({"role": "user", "content": user_input})
+    # ** Step 0: confirmation gate **
+    if i == 0:
+        if user_input.strip().lower() == "yes":
+            # They’re ready → jump into the actual meeting
+            st.session_state.step = 1
+        else:
+            # Anything else → remind them to confirm
+            reminder = (
+                "Are you sure you do not want to start the meeting now?\n\n"
+                "Please type **Yes** to begin or **No** if you want to delay."
+            )
+            st.session_state.history.append({"role": "assistant", "content": reminder})
+            # persist the reminder into the JSON history
+            with open(history_file, "w") as f:
+                json.dump(st.session_state.history, f, indent=2)
+        # bail out early so we stay on step 0 until they type “yes”
+        st.experimental_rerun()
 
-        # 2) Call the OpenAI client
-        resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=st.session_state.history,
-            temperature=0.7,
-        )
-        answer = resp.choices[0].message.content
+    # ** Steps 1+ : normal chat flow **
+    # 1) Append user’s real answer
+    st.session_state.history.append({"role": "user", "content": user_input})
+
+    # 2) Call the LLM
+    resp = client.chat.completions.create(
+        model="gpt-4o",
+        messages=st.session_state.history,
+        temperature=0.7,
+    )
+    answer = resp.choices[0].message.content
+
+    # 3) Append mentor’s reply
+    st.session_state.history.append({"role": "assistant", "content": answer})
+
+    # 4) Persist full history
+    with open(history_file, "w") as f:
+        json.dump(st.session_state.history, f, indent=2)
+
+    # 5) Advance step
+    if st.session_state.step < len(AGENDA) - 1:
+        st.session_state.step += 1
+    # no need for explicit rerun here—state change triggers it
+
 
         # 3) Append mentor reply
         st.session_state.history.append({"role": "assistant", "content": answer})
