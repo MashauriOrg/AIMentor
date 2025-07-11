@@ -117,16 +117,14 @@ if st.button("Next"):
         if user_input.strip().lower() == "yes":
             st.session_state.step = 1
         else:
-            reminder = (
+            # show one-off warning instead of saving into history
+            st.warning(
                 "Are you sure you do not want to start the meeting now?\n\n"
                 "Please type **Yes** to begin or **No** if you want to delay."
             )
-            st.session_state.history.append({"role": "assistant", "content": reminder})
-            with open(history_file, "w") as f:
-                json.dump(st.session_state.history, f, indent=2)
 
     # --- Steps 1+ : real chat flow ---
-    elif i > 0:
+    else:
         # 1) log the user’s input
         st.session_state.history.append({"role": "user", "content": user_input})
 
