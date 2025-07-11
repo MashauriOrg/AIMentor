@@ -7,6 +7,11 @@ from openai import OpenAI
 import faiss
 import numpy as np
 from langchain_community.embeddings import OpenAIEmbeddings
+import subprocess, os
+
+# If the FAISS index isn't on disk, rebuild it now:
+if not os.path.exists("faiss_index/index.faiss"):
+    subprocess.run(["python", "ingest_books.py"], check=True)
 
 # — AGENDA DEFINITIONS —  
 INTRO_STEPS = [
@@ -19,7 +24,7 @@ INTRO_STEPS = [
             "- I’ll ask questions and give Socratic feedback based on our book library\n\n"
             "**Limitations:**\n"
             "- I only know what’s in these books and what you tell me\n"
-            "- I can’t browse the web independently\n\n"
+            "- I can’t browse the web independently (yet at least)\n\n"
             "❓  **Please type any questions you have for me** (e.g. “How do we save our chat?”)."
         )
     },
@@ -62,7 +67,7 @@ MEETING_STEPS = [
         "title": "Problem Statement",
         "prompt": (
             "❗️ **Action:**\n"
-            "Type a **one-sentence problem statement** starting with “Our problem is …”.\n\n"
+            "Type a **one-sentence problem statement** starting with “The problem we are solving is …”.\n\n"
             "Example:\n"
             "```\nOur problem is that small businesses struggle to find affordable marketing tools.\n```"
         )
