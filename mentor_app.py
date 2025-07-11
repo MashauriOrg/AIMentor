@@ -1,36 +1,56 @@
 # mentor_app.py
 
-import os, json, streamlit as st, openai
+import os
+import json
+import streamlit as st
+from openai import OpenAI
 
-# 0) Setup
-openai.api_key = os.getenv("OPENAI_API_KEY")
-if not openai.api_key:
-    st.error("Missing OPENAI_API_KEY")
+# ── STREAMLIT & OPENAI SETUP ──
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=OPENAI_KEY)
+if not OPENAI_KEY:
+    st.error("Missing OPENAI_API_KEY in environment")
     st.stop()
+
 st.set_page_config(page_title="AI Mentor", layout="centered")
 
-# 1) Simple agenda
+# ── AGENDA ──
 AGENDA = [
-    {"title":"Meet Your Mentor",
-     "prompt":"Hello! I’m your AI Mentor. Ask me anything or type any questions now."},
-    {"title":"Confirm to Start",
-     "prompt":"When you’re ready, type exactly:\n\n`Yes, let’s start the meeting`"},
-    {"title":"Welcome & Introductions",
-     "prompt":"❗️ **Action:** Enter each team member’s full name, one per line."},
-    {"title":"Problem Statement",
-     "prompt":"❗️ **Action:** One-sentence problem starting “Our problem is …”"},
-    {"title":"Solution Overview",
-     "prompt":"❗️ **Action:** One-sentence solution starting “Our solution is …”"},
-    {"title":"Wrap-Up",
-     "prompt":"Click **Next** to receive your mentor’s final wrap-up."}
+    {"title": "Meet Your Mentor",
+     "prompt": (
+         "Hello! I’m your AI Mentor with decades of entrepreneurship experience.\n\n"
+         "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n"
+         "**Limitations:** I only know what’s in those books and what you tell me.\n\n"
+         "❓  Please type any questions you have for me now."
+     )},
+    {"title": "Confirm to Start",
+     "prompt": (
+         "When you’re ready, **type exactly**:\n\n"
+         "`Yes, let’s start the meeting`"
+     )},
+    {"title": "Welcome & Introductions",
+     "prompt": (
+         "❗️ **Action:** Enter each team member’s full name, one per line."
+     )},
+    {"title": "Problem Statement",
+     "prompt": (
+         "❗️ **Action:** One-sentence problem starting “Our problem is …”"
+     )},
+    {"title": "Solution Overview",
+     "prompt": (
+         "❗️ **Action:** One-sentence solution starting “Our solution is …”"
+     )},
+    {"title": "Wrap-Up",
+     "prompt": (
+         "Click **Next** to receive your mentor’s final wrap-up."
+     )}
 ]
 
-# 2) Authentication
-# AFTER (no duplicate IDs)
+# ── AUTHENTICATION ──
 if "team" not in st.session_state:
     name = st.text_input("Team name")
     pw   = st.text_input("Password", type="password")
-    login_clicked = st.button("Login")        # ← only one button
+    login_clicked = st.button("Login")  # only one button call
     if login_clicked:
         if pw == "letmein":
             st.session_state.team = name
@@ -38,60 +58,65 @@ if "team" not in st.session_state:
             st.error("Invalid credentials")
     st.stop()
 
-
 team = st.session_state.team
 st.title(f"👥 Team {team} — AI Mentor")
 
-# 3) History & step persistence
-data_dir = "data"; os.makedirs(data_dir, exist_ok=True)
-hist_file = os.path.join(data_dir, f"{team}_history.json")
+# ── PERSISTENCE: HISTORY & STEP ──
+data_dir = "data"
+os.makedirs(data_dir, exist_ok=True)
+history_file = os.path.join(data_dir, f"{team}_history.json")
 
 if "history" not in st.session_state:
-    if os.path.exists(hist_file):
-        st.session_state.history = json.load(open(hist_file))
+    if os.path.exists(history_file):
+        st.session_state.history = json.load(open(history_file, "r"))
     else:
-        st.session_state.history = [{
-            "role":"system",
-            "content":(
-                "You are a wise AI mentor. You ask Socratic questions "
-                "and draw on a curated library of entrepreneurship books."
-            )
-        }]
+        st.session_state.history = [
+            {"role": "system", "content":
+                "You are a wise AI mentor. You ask Socratic questions and draw on a curated library of entrepreneurship books."
+            }
+        ]
 
 if "step" not in st.session_state:
     st.session_state.step = 0
 
-# 4) Sidebar agenda
+# ── SIDEBAR: AGENDA ──
 st.sidebar.title("Agenda")
 for idx, item in enumerate(AGENDA):
-    mark = "➡️" if idx == st.session_state.step else ""
-    st.sidebar.write(f"{mark} {idx+1}. {item['title']}")
+    marker = "➡️" if idx == st.session_state.step else ""
+    st.sidebar.write(f"{marker} {idx+1}. {item['title']}")
 
-# 5) Display current step
+# ── MAIN: CURRENT STEP ──
 i = st.session_state.step
 st.header(f"Step {i+1}: {AGENDA[i]['title']}")
 st.write(AGENDA[i]["prompt"])
 
-# 6) Capture input & call OpenAI
+# ── INPUT & OPENAI CHAT ──
 user_input = st.text_area("Your response here", key=f"resp_{i}")
 if st.button("Next"):
-    st.session_state.history.append({"role":"user","content":user_input})
-    resp = openai.ChatCompletion.create(
+    # 1) Append user message
+    st.session_state.history.append({"role": "user", "content": user_input})
+
+    # 2) Call new OpenAI client
+    resp = client.chat.completions.create(
         model="gpt-4o",
         messages=st.session_state.history,
-        temperature=0.7
+        temperature=0.7,
     )
     answer = resp.choices[0].message.content
-    st.session_state.history.append({"role":"assistant","content":answer})
 
-    # persist & advance
-    with open(hist_file,"w") as f:
+    # 3) Append assistant message
+    st.session_state.history.append({"role": "assistant", "content": answer})
+
+    # 4) Persist full history
+    with open(history_file, "w") as f:
         json.dump(st.session_state.history, f, indent=2)
-    if st.session_state.step < len(AGENDA)-1:
+
+    # 5) Advance step and rerun to reset widgets
+    if st.session_state.step < len(AGENDA) - 1:
         st.session_state.step += 1
     st.experimental_rerun()
 
-# 7) Show chat (newest first)
+# ── RENDER HISTORY (NEWEST FIRST) ──
 for msg in reversed(st.session_state.history[1:]):
-    who = "👤 You:" if msg["role"]=="user" else "🤖 Mentor:"
+    who = "👤 You:" if msg["role"] == "user" else "🤖 Mentor:"
     st.markdown(f"**{who}** {msg['content']}")
