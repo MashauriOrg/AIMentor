@@ -114,7 +114,7 @@ if st.button("Next"):
     # 5) Advance step and rerun to reset widgets
     if st.session_state.step < len(AGENDA) - 1:
         st.session_state.step += 1
-    st.experimental_rerun()
+   
 
 # ── RENDER HISTORY (NEWEST FIRST) ──
 for msg in reversed(st.session_state.history[1:]):
