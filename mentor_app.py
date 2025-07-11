@@ -13,43 +13,70 @@ client = OpenAI(api_key=api_key)
 st.set_page_config(page_title="AI Mentor", layout="centered")
 
 # ── AGENDA DEFINITIONS ──
+# mentor_app.py
+
+import os
+import json
+import streamlit as st
+from openai import OpenAI
+
+# ── STREAMLIT & OPENAI SETUP ──
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+client      = OpenAI(api_key=OPENAI_KEY)
+if not OPENAI_KEY:
+    st.error("Missing OPENAI_API_KEY")
+    st.stop()
+
+st.set_page_config(page_title="AI Mentor", layout="centered")
+
+# ── AGENDA ──
 AGENDA = [
     {
         "title": "Meet Your Mentor",
         "prompt": (
-            "Hello! I’m your AI Mentor with decades of entrepreneurship experience—ready to help you develop your venture.\n\n"
+            "Hello! I’m your AI Mentor with decades of entrepreneurship experience and really want to help you successfully develop your venture idea.\n\n"
             "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n\n"
-            "**Limitations:** I start from top startup books and remember your inputs, but I’m still learning—be patient!\n\n"
-            "**Communication:** Your chats appear below; instructions appear above the input box.\n\n"
-            "**Are you ready to start the meeting?**\n\n"
-            "Please type exactly `Yes` to begin, or anything else to delay."
+            "**Limitations:** I generally start looking for information from the top best practice startup books in the world before I answer questions. I also remember what you tell me.\n\n"
+            "**Limitations 2:** I may have lots of information but am still taking baby steps to learn how to communicate with you, so please be patient with me.\n\n"
+            "**Communication:** Our chats are captured below the input area and the things you need to do next are found here, above the input area.\n\n"
+            "❓  **Please type any questions you have for me now.**"
+        )
+    },
+    {
+        "title": "Confirm to Start",
+        "prompt": (
+            "When you’re ready, **type exactly**:\n\n"
+            "`Yes, let’s start the meeting`"
         )
     },
     {
         "title": "Welcome & Introductions",
         "prompt": (
-            "❗️ **Action:** Enter each team member’s full name, one per line."
+            "❗️ **Action:** Enter each team member’s full name, one per line.\n\n"
+            "Example:\n```\nAlice Smith\nBob Johnson\nCarol Lee\n```"
         )
     },
     {
         "title": "Problem Statement",
         "prompt": (
-            "❗️ **Action:** Provide a one-sentence problem starting “Our problem is …”."
+            "❗️ **Action:** Provide a one-sentence problem starting “Our problem is …”.\n\n"
+            "Example:\n```\nOur problem is that small businesses struggle to find affordable marketing tools.\n```"
         )
     },
     {
         "title": "Solution Overview",
         "prompt": (
-            "❗️ **Action:** Provide a one-sentence solution starting “Our solution is …”."
+            "❗️ **Action:** Provide a one-sentence solution starting “Our solution is …”.\n\n"
+            "Example:\n```\nOur solution is a mobile app that automates social-media posts for local shops.\n```"
         )
     },
     {
         "title": "Wrap-Up",
-        "prompt": (
-            "Click **Next** to receive your mentor’s final wrap-up."
-        )
-    }
+        "prompt": "Click **Next** to receive your mentor’s final wrap-up."
+    },
 ]
+
+
 
 # ── AUTHENTICATION ──
 if "team" not in st.session_state:
