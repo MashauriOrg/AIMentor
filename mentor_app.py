@@ -111,41 +111,44 @@ st.write(AGENDA[i]["prompt"])
 # ── INPUT & CHAT LOGIC ──
 user_input = st.text_area("Your response here", key=f"resp_{i}")
 if st.button("Next"):
-
-    # --- Step 0: yes/no gate (no LLM call) ---
+    # Step 0: just a yes/no gate
     if i == 0:
         if user_input.strip().lower() == "yes":
             st.session_state.step = 1
+            # immediately rerun so the UI flips to Step 1
+            st.experimental_rerun()
         else:
-            # show one-off warning instead of saving into history
             st.warning(
-                "Are you sure you do not want to start the meeting now?\n\n"
-                "Please type **Yes** to begin or **No** if you want to delay."
+                "Are you sure you don't want to start the meeting yet?\n\n"
+                "Please type **Yes** to begin or continue thinking."
             )
+            # STOP here—don't fall through into your LLM logic
+            st.stop()
 
-    # --- Steps 1+ : real chat flow ---
-    else:
-        # 1) log the user’s input
-        st.session_state.history.append({"role": "user", "content": user_input})
+    # Steps 1+ : normal chat flow
+    # 1) record user message
+    st.session_state.history.append({"role": "user", "content": user_input})
 
-        # 2) call the LLM
-        resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=st.session_state.history,
-            temperature=0.7,
-        )
-        answer = resp.choices[0].message.content
+    # 2) call the LLM
+    resp = client.chat.completions.create(
+        model="gpt-4o",
+        messages=st.session_state.history,
+        temperature=0.7,
+    )
+    answer = resp.choices[0].message.content
 
-        # 3) log the mentor’s reply
-        st.session_state.history.append({"role": "assistant", "content": answer})
+    # 3) record the assistant reply
+    st.session_state.history.append({"role": "assistant", "content": answer})
 
-        # 4) save to disk
-        with open(history_file, "w") as f:
-            json.dump(st.session_state.history, f, indent=2)
+    # 4) persist
+    with open(history_file, "w") as f:
+        json.dump(st.session_state.history, f, indent=2)
 
-        # 5) advance to next step
-        if st.session_state.step < len(AGENDA) - 1:
-            st.session_state.step += 1
+    # 5) advance
+    if st.session_state.step < len(AGENDA) - 1:
+        st.session_state.step += 1
+    # and rerun automatically on state change
+
 
 # ── RENDER ONLY THIS SESSION’S CHAT ──
 for msg in st.session_state.history[st.session_state.start_index:]:
