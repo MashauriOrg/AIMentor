@@ -75,6 +75,10 @@ if "history" not in st.session_state:
                 "You are a wise AI mentor. You ask Socratic questions and draw on a curated library of entrepreneurship books."
             }
         ]
+# RIGHT HERE, record the number of “old” messages:
+if "start_index" not in st.session_state:
+    st.session_state.start_index = len(st.session_state.history)
+
 
 if "step" not in st.session_state:
     st.session_state.step = 0
@@ -117,6 +121,6 @@ if st.button("Next"):
    
 
 # ── RENDER HISTORY (NEWEST FIRST) ──
-for msg in reversed(st.session_state.history[1:]):
-    who = "👤 You:" if msg["role"] == "user" else "🤖 Mentor:"
-    st.markdown(f"**{who}** {msg['content']}")
+for msg in reversed(st.session_state.history[st.session_state.start_index:]):
+    prefix = "👤 You:" if msg["role"]=="user" else "🤖 Mentor:"
+    st.markdown(f"**{prefix}** {msg['content']}")
