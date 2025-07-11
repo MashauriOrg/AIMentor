@@ -2,43 +2,54 @@
 
 import os
 import sys
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.document_loaders import TextLoader
+import faiss
+import numpy as np
+import openai
+from glob import glob
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
 
-# ── 0) Ensure the API key is set ──
-openai_key = os.getenv("OPENAI_API_KEY")
-if not openai_key:
-    print("❌ Error: Missing OPENAI_API_KEY", file=sys.stderr)
+# 0) Ensure API key
+openai.api_key = os.getenv("OPENAI_API_KEY")
+if not openai.api_key:
+    print("❌ Missing OPENAI_API_KEY", file=sys.stderr)
     sys.exit(1)
 
-# ── 1) Load all .txt files from extracted_books/ ──
-books_dir = "extracted_books"
-if not os.path.isdir(books_dir):
-    print(f"❌ Error: Directory '{books_dir}' not found.", file=sys.stderr)
-    sys.exit(1)
+# 1) Load all .txts
+files = glob("extracted_books/*.txt")
+if not files:
+    print("⚠️ No .txt files in extracted_books/", file=sys.stderr)
 
-docs = []
-for filename in os.listdir(books_dir):
-    if filename.lower().endswith(".txt"):
-        path = os.path.join(books_dir, filename)
-        loader = TextLoader(path, encoding="utf8")
-        docs.extend(loader.load())
+raw_texts = []
+for path in files:
+    with open(path, encoding="utf8") as f:
+        raw_texts.append(f.read())
 
-if not docs:
-    print(f"⚠️ Warning: No .txt files found in '{books_dir}'.", file=sys.stderr)
-
-# ── 2) Chunk & embed ──
+# 2) Chunk
 splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-chunks   = splitter.split_documents(docs)
+# wrap as simple objects:
+class Doc: 
+    def __init__(self, txt): self.page_content = txt
+docs = [Doc(t) for t in raw_texts]
+chunks = splitter.split_documents(docs)
 
-emb = OpenAIEmbeddings(openai_api_key=openai_key)
-vectorstore = FAISS.from_documents(chunks, emb)
+# 3) Embed each chunk with OpenAI
+embeddings = []
+for chunk in chunks:
+    resp = openai.Embedding.create(model="text-embedding-ada-002",
+                                   input=chunk.page_content)
+    embeddings.append(np.array(resp["data"][0]["embedding"], dtype="float32"))
 
-# ── 3) Save the index ──
-index_dir = "faiss_index"
-os.makedirs(index_dir, exist_ok=True)
-vectorstore.save_local(index_dir)
+matrix = np.stack(embeddings)
 
-print(f"✅ Index built with {len(chunks)} chunks and saved to '{index_dir}/'.")
+# 4) Build & save FAISS index
+dim = matrix.shape[1]
+index = faiss.IndexFlatL2(dim)
+index.add(matrix)
+os.makedirs("faiss_index", exist_ok=True)
+faiss.write_index(index, "faiss_index/index.faiss")
+
+# 5) Save texts
+texts = [c.page_content for c in chunks]
+np.save("faiss_index/texts.npy", np.array(texts, dtype=object))
+
+print(f"✅ Built index with {len(chunks)} chunks")

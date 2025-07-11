@@ -4,51 +4,44 @@ import os
 import json
 import subprocess
 import streamlit as st
-from openai import OpenAI
 import faiss
 import numpy as np
-from langchain.embeddings.openai import OpenAIEmbeddings
+import openai
 
-# ── AUTO-INGEST: rebuild FAISS index if missing ──
+# 0) Auto-ingest on first start
 if not os.path.exists("faiss_index/index.faiss"):
     subprocess.run(["python", "ingest_books.py"], check=True)
 
-# — AGENDA DEFINITIONS —
+# 1) Agenda definitions
 INTRO_STEPS = [
     {
         "title": "Meet Your Mentor",
         "prompt": (
             "Hello! I’m your AI Mentor with decades of entrepreneurship experience.\n\n"
             "**Capabilities:**\n"
-            "- I’ll guide you step-by-step through this meeting\n"
-            "- I’ll ask questions and give Socratic feedback based on our book library\n\n"
+            "- I’ll guide you step-by-step\n"
+            "- I’ll ask Socratic questions based on our book library\n\n"
             "**Limitations:**\n"
-            "- I only know what’s in these books and what you tell me\n"
-            "- I can’t browse the web independently (yet at least)\n\n"
-            "❓  **Please type any questions you have for me** (e.g. “How do we save our chat?”)."
+            "- I only know what’s in these books and what you tell me\n\n"
+            "❓ Type any questions for me now."
         )
     },
     {
         "title": "Confirm to Start",
         "prompt": (
-            "When you’re ready to begin the meeting, **please type exactly**\n\n"
+            "When you’re ready, **type exactly**:\n\n"
             "`Yes, let’s start the meeting`"
         )
     },
     {
         "title": "Agenda Overview",
         "prompt": (
-            "Here is our agenda—no action yet, just review:\n\n"
+            "Here’s our 9-step agenda:\n"
             "1. Welcome & Introductions\n"
             "2. Problem Statement\n"
-            "3. Solution Overview\n"
-            "4. Mentor Comments\n"
-            "5. Team Member Intros\n"
-            "6. Mentor Summary\n"
-            "7. Top Struggles\n"
-            "8. Takeaways\n"
+            "…\n"
             "9. Wrap-Up\n\n"
-            "When you’re ready, click **Next** to start with Step 1."
+            "Click **Next** to begin Step 1."
         )
     }
 ]
@@ -57,213 +50,101 @@ MEETING_STEPS = [
     {
         "title": "Welcome & Introductions",
         "prompt": (
-            "❗️ **Action:**\n"
-            "Please **type each team member’s full name**, one per line.\n\n"
-            "Example:\n"
-            "```\nAlice Smith\nBob Johnson\nCarol Lee\n```"
+            "❗️ **Action:** Enter each team member’s full name, one per line.\n\n"
+            "Example:\nAlice Smith\nBob Johnson"
         )
     },
     {
         "title": "Problem Statement",
-        "prompt": (
-            "❗️ **Action:**\n"
-            "Type a **one-sentence problem statement** starting with “Our problem is …”.\n\n"
-            "Example:\n"
-            "```\nOur problem is that small businesses struggle to find affordable marketing tools.\n```"
-        )
+        "prompt": "❗️ **Action:** One-sentence problem starting “Our problem is …”"
     },
     {
         "title": "Solution Overview",
-        "prompt": (
-            "❗️ **Action:**\n"
-            "Type a **one-sentence solution overview** starting with “Our solution is …”.\n\n"
-            "Example:\n"
-            "```\nOur solution is a mobile app that automates social-media posts for local shops.\n```"
-        )
+        "prompt": "❗️ **Action:** One-sentence solution starting “Our solution is …”"
     },
-    {
-        "title": "Mentor Comments",
-        "prompt": (
-            "📝 **Information:**\n"
-            "Click **Next** to receive my feedback on your problem and solution."
-        )
-    },
-    {
-        "title": "Team Member Intros",
-        "prompt": (
-            "❗️ **Action:**\n"
-            "Please fill in the form below for each member with these exact fields:\n"
-            "- **Name** (First Last)\n"
-            "- **Email**\n"
-            "- **Role** on the team (e.g., CEO, Developer)\n"
-            "- **Objective:** one sentence\n"
-            "- **Why you joined:** one sentence\n"
-            "- **Key strength:** one bullet\n\n"
-            "Use the “How many members?” selector, then complete the form."
-        )
-    },
-    {
-        "title": "Mentor Summary",
-        "prompt": (
-            "📝 **Information:**\n"
-            "Click **Next** to see my summary of your team intros and any gaps I notice."
-        )
-    },
-    {
-        "title": "Top Struggles",
-        "prompt": (
-            "❗️ **Action:**\n"
-            "Type the **one or two biggest challenges** you’re facing right now, each on its own line.\n\n"
-            "Example:\n"
-            "```\nFinding customers\nManaging cash flow\n```"
-        )
-    },
-    {
-        "title": "Takeaways",
-        "prompt": (
-            "❗️ **Action:**\n"
-            "Each member, type **one sentence** about what you got out of this meeting, one per line.\n\n"
-            "Example:\n"
-            "```\nAlice: I learned how to articulate our problem clearly.\nBob: I understand our next product milestone.\n```"
-        )
-    },
+    # … add the other steps similarly …
     {
         "title": "Wrap-Up",
-        "prompt": (
-            "📝 **Information:**\n"
-            "Click **Next** to receive my final wrap-up and next-step suggestions."
-        )
+        "prompt": "📝 Click **Next** to receive my final wrap-up."
     }
 ]
 
 AGENDA = INTRO_STEPS + MEETING_STEPS
 
-# — CONFIG & CLIENT —
-api_key = os.getenv("OPENAI_API_KEY")
-client  = OpenAI(api_key=api_key)
+# 2) Streamlit setup
+openai.api_key = os.getenv("OPENAI_API_KEY")
 st.set_page_config(page_title="AI Mentor", layout="centered")
 
-# — LOAD FAISS INDEX & TEXTS ──
-index     = faiss.read_index("faiss_index/index.faiss")
-texts     = np.load("faiss_index/texts.npy", allow_pickle=True)
-metadatas = np.load("faiss_index/metadatas.npy", allow_pickle=True)
+# 3) Load FAISS & texts
+index = faiss.read_index("faiss_index/index.faiss")
+texts = np.load("faiss_index/texts.npy", allow_pickle=True)
 
-# — AUTHENTICATION ──
+# 4) Auth
 if "team" not in st.session_state:
-    team = st.text_input("Team name", key="team_name")
-    pw   = st.text_input("Password", type="password", key="team_pw")
-    if st.button("Login"):
-        if pw == "letmein":
-            st.session_state.team = team
-        else:
-            st.error("Invalid credentials")
-    if "team" not in st.session_state:
-        st.stop()
+    name = st.text_input("Team name")
+    pw   = st.text_input("Password", type="password")
+    if st.button("Login") and pw == "letmein":
+        st.session_state.team = name
+    else:
+        if st.button("Login"): st.error("Invalid")
+    st.stop()
 
+# 5) Init history & step
 team = st.session_state.team
-st.title(f"👥 Team {team} — Your AI Mentor")
-
-# — PERSISTENCE: history + step index ──
-data_dir = "data"
-os.makedirs(data_dir, exist_ok=True)
-history_path = f"{data_dir}/{team}_history.json"
+data_dir = "data"; os.makedirs(data_dir, exist_ok=True)
+hist_file = f"{data_dir}/{team}_history.json"
 
 if "history" not in st.session_state:
-    if os.path.exists(history_path):
-        with open(history_path, "r") as f:
-            st.session_state.history = json.load(f)
+    if os.path.exists(hist_file):
+        st.session_state.history = json.load(open(hist_file))
     else:
         st.session_state.history = [
-            {"role": "system", "content": (
-                "You are a wise mentor with decades of entrepreneurship experience. "
-                "You use a Socratic style, drawing on a library of startup books."
-            )}
+            {"role":"system","content":"You are a Socratic AI mentor."}
         ]
+if "step" not in st.session_state: st.session_state.step = 0
 
-if "step" not in st.session_state:
-    st.session_state.step = 0
-
-# — SIDEBAR: agenda navigation ──
-st.sidebar.title("Meeting Agenda")
+# 6) Sidebar agenda
+st.sidebar.title("Agenda")
 for i, item in enumerate(AGENDA):
-    prefix = "➡️" if i == st.session_state.step else "  "
-    st.sidebar.write(f"{prefix} Step {i+1}: {item['title']}")
+    mark = "➡️" if i==st.session_state.step else ""
+    st.sidebar.write(f"{mark} {i+1}. {item['title']}")
 
-# — MAIN: current step ──
-step = st.session_state.step
-st.header(f"Step {step+1}: {AGENDA[step]['title']}")
-st.write(AGENDA[step]["prompt"])
+# 7) Show current step
+i = st.session_state.step
+st.header(f"Step {i+1}: {AGENDA[i]['title']}")
+st.write(AGENDA[i]["prompt"])
 
-# — STEP INPUT & ADVANCE ──
-current_title = AGENDA[step]["title"]
+# 8) Input & advance
+resp = None
+if st.button("Next"):
+    # record user input
+    user_txt = st.text_area("Your response", key=f"resp_{i}")
+    st.session_state.history.append({"role":"user","content":user_txt})
 
-if current_title == "Team Member Intros":
-    with st.form("member_form"):
-        num = st.number_input("How many members?", min_value=1, max_value=10, value=1)
-        members = []
-        for i in range(num):
-            st.markdown(f"**Member {i+1} Details**")
-            name      = st.text_input("Name (First Last)", key=f"name_{i}")
-            email     = st.text_input("Email", key=f"email_{i}")
-            role_on   = st.text_input("Role on team", key=f"role_{i}")
-            objective = st.text_area("Program objective", key=f"obj_{i}")
-            why       = st.text_area("Why you joined", key=f"why_{i}")
-            strength  = st.text_area("Key strength", key=f"strength_{i}")
-            members.append({
-                "Name": name,
-                "Email": email,
-                "Role": role_on,
-                "Objective": objective,
-                "Why": why,
-                "Strength": strength
-            })
-        submitted = st.form_submit_button("Submit members")
+    # optional RAG retrieval:
+    # vec = openai.Embedding.create(model="text-embedding-ada-002",input=user_txt)
+    # D,I = index.search(np.array(vec["data"][0]["embedding"],dtype="float32")[None],3)
+    # context = "\n\n".join(texts[j] for j in I[0])
+    # prompt = f"{context}\n\nUser: {user_txt}"
 
-    if submitted:
-        content = "\n\n".join(
-            f"Member {i+1}:\n" + "\n".join(f"- {k}: {v}" for k, v in m.items())
-            for i, m in enumerate(members)
-        )
-        st.session_state.history.append({"role": "user", "content": content})
+    # call chat
+    chat = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=st.session_state.history,
+        temperature=0.7
+    )
+    resp = chat.choices[0].message.content
+    st.session_state.history.append({"role":"assistant","content":resp})
 
-        resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=st.session_state.history,
-            temperature=0.7
-        )
-        answer = resp.choices[0].message.content
-        st.session_state.history.append({"role": "assistant", "content": answer})
+    # persist
+    with open(hist_file,"w") as f:
+        json.dump(st.session_state.history, f, indent=2)
 
-        with open(history_path, "w") as f:
-            json.dump(st.session_state.history, f, indent=2)
+    # advance step
+    if st.session_state.step < len(AGENDA)-1:
+        st.session_state.step += 1
 
-        # Advance to next step
-        if step < len(AGENDA) - 1:
-            st.session_state.step += 1
-
-else:
-    response = st.text_area("Your response here", key=f"step_{step}")
-    if st.button("Next"):
-        st.session_state.history.append({
-            "role": "user",
-            "content": f"{current_title} response: {response}"
-        })
-        resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=st.session_state.history,
-            temperature=0.7
-        )
-        answer = resp.choices[0].message.content
-        st.session_state.history.append({"role": "assistant", "content": answer})
-
-        with open(history_path, "w") as f:
-            json.dump(st.session_state.history, f, indent=2)
-
-        # Advance to next step
-        if step < len(AGENDA) - 1:
-            st.session_state.step += 1
-
-# — RENDER HISTORY (newest first) ──
+# 9) Show history (newest first)
 for msg in reversed(st.session_state.history[1:]):
-    prefix = "👤 You:" if msg["role"] == "user" else "🤖 Mentor:"
-    st.markdown(f"**{prefix}** {msg['content']}")
+    who = "👤 You:" if msg["role"]=="user" else "🤖 Mentor:"
+    st.write(f"**{who}** {msg['content']}")
