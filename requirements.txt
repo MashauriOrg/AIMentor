@@ -10,8 +10,11 @@ faiss-cpu
 # Numeric arrays
 numpy>=1.24,<2.0
 
-# LangChain “community” modules
-langchain-community>=0.0.100
+
+# LangChain and embeddings
+langchain>=0.0.268
+tiktoken
+
 
 # (Optional—only if you’re using extra visualization libs)
 altair>=5.0.1
