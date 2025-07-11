@@ -128,7 +128,7 @@ if st.button("Next"):
             with open(history_file, "w") as f:
                 json.dump(st.session_state.history, f, indent=2)
         # bail out early so we stay on step 0 until they type “yes”
-        st.experimental_rerun()
+        
 
     # ** Steps 1+ : normal chat flow **
     # 1) Append user’s real answer
