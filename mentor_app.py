@@ -1,66 +1,61 @@
-# mentor_app.py
-
 import os
 import json
 import streamlit as st
 from openai import OpenAI
 
 # ── STREAMLIT & OPENAI SETUP ──
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-client     = OpenAI(api_key=OPENAI_KEY)
-if not OPENAI_KEY:
-    st.error("Missing OPENAI_API_KEY")
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    st.error("Missing OPENAI_API_KEY environment variable")
     st.stop()
+client = OpenAI(api_key=api_key)
 
 st.set_page_config(page_title="AI Mentor", layout="centered")
 
-# ── AGENDA ──
+# ── AGENDA DEFINITIONS ──
 AGENDA = [
     {
         "title": "Meet Your Mentor",
         "prompt": (
             "Hello! I’m your AI Mentor with decades of entrepreneurship experience—ready to help you develop your venture.\n\n"
             "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n\n"
-            "**Limitations:** I start by reviewing top-practice startup books before I answer questions, and I remember what you tell me.\n\n"
-            "**Communication:** Our chats appear below; next steps appear above the input.\n\n"
+            "**Limitations:** I start from top startup books and remember your inputs, but I’m still learning—be patient!\n\n"
+            "**Communication:** Your chats appear below; instructions appear above the input box.\n\n"
             "**Are you ready to start the meeting?**\n\n"
-            "Please type exactly:\n\n"
-            "`Yes`"
+            "Please type exactly `Yes` to begin, or anything else to delay."
         )
     },
     {
         "title": "Welcome & Introductions",
         "prompt": (
-            "❗️ **Action:** Enter each team member’s full name, one per line.\n\n"
-            "Example:\n```\nAlice Smith\nBob Johnson\nCarol Lee\n```"
+            "❗️ **Action:** Enter each team member’s full name, one per line."
         )
     },
     {
         "title": "Problem Statement",
         "prompt": (
-            "❗️ **Action:** Provide a one-sentence problem starting “Our problem is …”.\n\n"
-            "Example:\n```\nOur problem is that small businesses struggle to find affordable marketing tools.\n```"
+            "❗️ **Action:** Provide a one-sentence problem starting “Our problem is …”."
         )
     },
     {
         "title": "Solution Overview",
         "prompt": (
-            "❗️ **Action:** Provide a one-sentence solution starting “Our solution is …”.\n\n"
-            "Example:\n```\nOur solution is a mobile app that automates social-media posts for local shops.\n```"
+            "❗️ **Action:** Provide a one-sentence solution starting “Our solution is …”."
         )
     },
     {
         "title": "Wrap-Up",
-        "prompt": "Click **Next** to receive your mentor’s final wrap-up."
-    },
+        "prompt": (
+            "Click **Next** to receive your mentor’s final wrap-up."
+        )
+    }
 ]
 
 # ── AUTHENTICATION ──
 if "team" not in st.session_state:
-    name          = st.text_input("Team name")
-    pw            = st.text_input("Password", type="password")
-    login_clicked = st.button("Login")
-    if login_clicked:
+    name = st.text_input("Team name")
+    pw = st.text_input("Password", type="password")
+    if st.button("Login"):
         if pw == "letmein":
             st.session_state.team = name
         else:
@@ -71,76 +66,54 @@ team = st.session_state.team
 st.title(f"👥 Team {team} — AI Mentor")
 
 # ── PERSISTENCE: HISTORY & STEP ──
-data_dir     = "data"
+data_dir = "data"
 os.makedirs(data_dir, exist_ok=True)
 history_file = os.path.join(data_dir, f"{team}_history.json")
 
 if "history" not in st.session_state:
     if os.path.exists(history_file):
-        st.session_state.history = json.load(open(history_file, "r"))
+        with open(history_file, "r") as f:
+            st.session_state.history = json.load(f)
     else:
         st.session_state.history = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a wise AI mentor with decades of entrepreneurship experience. "
-                    "After each team response, first say “Thanks for the input.” "
-                    "Then add an insightful comment, and finally instruct them on what to do next."
-                )
-            }
+            {"role": "system", "content": (
+                "You are a wise AI mentor with decades of entrepreneurship experience. "
+                "After each team input, say 'Thanks for the input.' then provide guidance."
+            )}
         ]
-
-# remember where “old” messages end so we only render the new
-if "start_index" not in st.session_state:
     st.session_state.start_index = len(st.session_state.history)
 
 if "step" not in st.session_state:
     st.session_state.step = 0
 
-# ── SIDEBAR: Agenda Navigation ──
-st.sidebar.title("Agenda")
+# ── SIDEBAR AGENDA ──
+st.sidebar.title("Meeting Agenda")
 for idx, item in enumerate(AGENDA):
-    marker = "➡️" if idx == st.session_state.step else ""
+    marker = "➡️" if idx == st.session_state.step else "  "
     st.sidebar.write(f"{marker} Step {idx+1}: {item['title']}")
 
-# ── MAIN VIEW: Current Step ──
-i = st.session_state.step
-st.header(f"Step {i+1}: {AGENDA[i]['title']}")
-st.write(AGENDA[i]["prompt"])
+# ── MAIN: CURRENT STEP ──
+step = st.session_state.step
+st.header(f"Step {step+1}: {AGENDA[step]['title']}")
+st.write(AGENDA[step]['prompt'])
 
-# ── INPUT & CHAT LOGIC ──
-user_input = st.text_area("Your response here", key=f"resp_{i}")
+# ── USER INPUT & ADVANCE ──
+user_input = st.text_area("Your response here", key=f"resp_{step}")
 if st.button("Next"):
-    # ** Step 0: confirmation gate **
-    if i == 0:
+    # Step 0: confirmation gate
+    if step == 0:
         if user_input.strip().lower() == "yes":
-            # advance into the actual meeting
             st.session_state.step = 1
         else:
-            # show a one-off warning, don’t call the LLM yet
-            st.warning(
-                "Are you sure you don't want to start the meeting yet?\n\n"
-                "Please type **Yes** when you are ready."
-            )
-        # halt here so we don’t fall through to the LLM call
+            # reminder only
+            st.warning("Are you sure you don’t want to start? Type 'Yes' when ready.")
         st.stop()
 
-    # ** Steps 1+ : normal chat flow **
+    # Steps 1+: normal flow
+    # 1) record user input
     st.session_state.history.append({"role": "user", "content": user_input})
-    resp = client.chat.completions.create(
-        model="gpt-4o",
-        messages=st.session_state.history,
-        temperature=0.7,
-    )
-    answer = resp.choices[0].message.content
-    st.session_state.history.append({"role": "assistant", "content": answer})
-    with open(history_file, "w") as f:
-        json.dump(st.session_state.history, f, indent=2)
-    if st.session_state.step < len(AGENDA) - 1:
-        st.session_state.step += 1
 
-
-    # 2) call the LLM
+    # 2) call LLM
     resp = client.chat.completions.create(
         model="gpt-4o",
         messages=st.session_state.history,
@@ -148,20 +121,19 @@ if st.button("Next"):
     )
     answer = resp.choices[0].message.content
 
-    # 3) record the assistant reply
+    # 3) record assistant reply
     st.session_state.history.append({"role": "assistant", "content": answer})
 
-    # 4) persist
+    # 4) persist history
     with open(history_file, "w") as f:
         json.dump(st.session_state.history, f, indent=2)
 
-    # 5) advance
+    # 5) advance step
     if st.session_state.step < len(AGENDA) - 1:
         st.session_state.step += 1
-    # and rerun automatically on state change
+    st.stop()
 
-
-# ── RENDER ONLY THIS SESSION’S CHAT ──
+# ── RENDER HISTORY (SESSION ONLY) ──
 for msg in st.session_state.history[st.session_state.start_index:]:
     who = "👤 You:" if msg["role"] == "user" else "🤖 Mentor:"
     st.markdown(f"**{who}** {msg['content']}")
