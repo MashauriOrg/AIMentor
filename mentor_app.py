@@ -108,27 +108,35 @@ st.write(AGENDA[i]["prompt"])
 # ── INPUT & OPENAI CHAT ──
 user_input = st.text_area("Your response here", key=f"resp_{i}")
 if st.button("Next"):
-    # 1) Append user
-    st.session_state.history.append({"role": "user", "content": user_input})
+    # Special case: first step is just a confirmation, not real chat
+    if i == 0 and user_input.strip().lower() == "yes, let's start the meeting":
+        # Advance immediately, but do NOT record confirmation in history
+        st.session_state.step = 1
+    else:
+        # 1) Append user message
+        st.session_state.history.append({"role": "user", "content": user_input})
 
-    # 2) Call OpenAI v1 client
-    resp = client.chat.completions.create(
-        model="gpt-4o",
-        messages=st.session_state.history,
-        temperature=0.7,
-    )
-    answer = resp.choices[0].message.content
+        # 2) Call the OpenAI client
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=st.session_state.history,
+            temperature=0.7,
+        )
+        answer = resp.choices[0].message.content
 
-    # 3) Append mentor reply
-    st.session_state.history.append({"role": "assistant", "content": answer})
+        # 3) Append mentor reply
+        st.session_state.history.append({"role": "assistant", "content": answer})
 
-    # 4) Persist full history
-    with open(history_file, "w") as f:
-        json.dump(st.session_state.history, f, indent=2)
+        # 4) Persist full history
+        with open(history_file, "w") as f:
+            json.dump(st.session_state.history, f, indent=2)
 
-    # 5) Advance to next step
-    if st.session_state.step < len(AGENDA) - 1:
-        st.session_state.step += 1
+        # 5) Advance to next step if not at the end
+        if st.session_state.step < len(AGENDA) - 1:
+            st.session_state.step += 1
+
+    # Streamlit will auto-rerun on state change, updating the prompt and clearing the box
+
 
 # ── RENDER HISTORY (SESSION-ONLY) ──
 for msg in st.session_state.history[st.session_state.start_index:]:
