@@ -26,14 +26,18 @@ AGENDA = [
 ]
 
 # 2) Authentication
+# AFTER (no duplicate IDs)
 if "team" not in st.session_state:
     name = st.text_input("Team name")
     pw   = st.text_input("Password", type="password")
-    if st.button("Login") and pw == "letmein":
-        st.session_state.team = name
-    else:
-        if st.button("Login"): st.error("Invalid credentials")
+    login_clicked = st.button("Login")        # ← only one button
+    if login_clicked:
+        if pw == "letmein":
+            st.session_state.team = name
+        else:
+            st.error("Invalid credentials")
     st.stop()
+
 
 team = st.session_state.team
 st.title(f"👥 Team {team} — AI Mentor")
