@@ -7,7 +7,7 @@ from openai import OpenAI
 
 # ── STREAMLIT & OPENAI SETUP ──
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-client      = OpenAI(api_key=OPENAI_KEY)
+client     = OpenAI(api_key=OPENAI_KEY)
 if not OPENAI_KEY:
     st.error("Missing OPENAI_API_KEY")
     st.stop()
@@ -20,10 +20,9 @@ AGENDA = [
         "title": "Meet Your Mentor",
         "prompt": (
             "Hello! I’m your AI Mentor with decades of entrepreneurship experience—ready to help you develop your venture.\n\n"
-               "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n\n"
-               "**Limitations:** I generally start looking for information from the top best practioce startup books in the world before I answer questions.I also remember what you tell me.\n\n"
-               "**Limitations 2:** I may have lots of information but am still taking baby steps to learn how to communicate with you, so please be patient with me.\n\n"
-               "**Communication** Our chats are captured below the input area and the things you need to do next are found here, above the  input area.\n\n"
+            "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n\n"
+            "**Limitations:** I start by reviewing top-practice startup books before I answer questions, and I remember what you tell me.\n\n"
+            "**Communication:** Our chats appear below; next steps appear above the input.\n\n"
             "**Are you ready to start the meeting?**\n\n"
             "Please type exactly:\n\n"
             "`Yes`"
@@ -60,7 +59,7 @@ AGENDA = [
 if "team" not in st.session_state:
     name          = st.text_input("Team name")
     pw            = st.text_input("Password", type="password")
-    login_clicked = st.button("Login")  # single, keyed button
+    login_clicked = st.button("Login")
     if login_clicked:
         if pw == "letmein":
             st.session_state.team = name
@@ -78,7 +77,7 @@ history_file = os.path.join(data_dir, f"{team}_history.json")
 
 if "history" not in st.session_state:
     if os.path.exists(history_file):
-        st.session_state.history = json.load(open(history_file))
+        st.session_state.history = json.load(open(history_file, "r"))
     else:
         st.session_state.history = [
             {
@@ -91,85 +90,66 @@ if "history" not in st.session_state:
             }
         ]
 
-# Record how many messages were loaded so far
+# remember where “old” messages end so we only render the new
 if "start_index" not in st.session_state:
     st.session_state.start_index = len(st.session_state.history)
 
 if "step" not in st.session_state:
     st.session_state.step = 0
 
-# ── SIDEBAR AGENDA ──
+# ── SIDEBAR: Agenda Navigation ──
 st.sidebar.title("Agenda")
 for idx, item in enumerate(AGENDA):
     marker = "➡️" if idx == st.session_state.step else ""
     st.sidebar.write(f"{marker} Step {idx+1}: {item['title']}")
 
-# ── MAIN: CURRENT STEP ──
+# ── MAIN VIEW: Current Step ──
 i = st.session_state.step
 st.header(f"Step {i+1}: {AGENDA[i]['title']}")
 st.write(AGENDA[i]["prompt"])
 
-# ── INPUT & OPENAI CHAT ──
+# ── INPUT & CHAT LOGIC ──
 user_input = st.text_area("Your response here", key=f"resp_{i}")
 if st.button("Next"):
-    # ** Step 0: confirmation gate **
+
+    # --- Step 0: yes/no gate (no LLM call) ---
     if i == 0:
         if user_input.strip().lower() == "yes":
-            # They’re ready → jump into the actual meeting
             st.session_state.step = 1
         else:
-            # Anything else → remind them to confirm
             reminder = (
                 "Are you sure you do not want to start the meeting now?\n\n"
                 "Please type **Yes** to begin or **No** if you want to delay."
             )
             st.session_state.history.append({"role": "assistant", "content": reminder})
-            # persist the reminder into the JSON history
             with open(history_file, "w") as f:
                 json.dump(st.session_state.history, f, indent=2)
-        # bail out early so we stay on step 0 until they type “yes”
-        
 
-    # ** Steps 1+ : normal chat flow **
-    # 1) Append user’s real answer
-    st.session_state.history.append({"role": "user", "content": user_input})
+    # --- Steps 1+ : real chat flow ---
+    elif i > 0:
+        # 1) log the user’s input
+        st.session_state.history.append({"role": "user", "content": user_input})
 
-    # 2) Call the LLM
-    resp = client.chat.completions.create(
-        model="gpt-4o",
-        messages=st.session_state.history,
-        temperature=0.7,
-    )
-    answer = resp.choices[0].message.content
+        # 2) call the LLM
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=st.session_state.history,
+            temperature=0.7,
+        )
+        answer = resp.choices[0].message.content
 
-    # 3) Append mentor’s reply
-    st.session_state.history.append({"role": "assistant", "content": answer})
-
-    # 4) Persist full history
-    with open(history_file, "w") as f:
-        json.dump(st.session_state.history, f, indent=2)
-
-    # 5) Advance step
-    if st.session_state.step < len(AGENDA) - 1:
-        st.session_state.step += 1
-    # no need for explicit rerun here—state change triggers it
-
-
-        # 3) Append mentor reply
+        # 3) log the mentor’s reply
         st.session_state.history.append({"role": "assistant", "content": answer})
 
-        # 4) Persist full history
+        # 4) save to disk
         with open(history_file, "w") as f:
             json.dump(st.session_state.history, f, indent=2)
 
-        # 5) Advance to next step if not at the end
+        # 5) advance to next step
         if st.session_state.step < len(AGENDA) - 1:
             st.session_state.step += 1
 
-    # Streamlit will auto-rerun on state change, updating the prompt and clearing the box
-
-
-# ── RENDER HISTORY (SESSION-ONLY) ──
+# ── RENDER ONLY THIS SESSION’S CHAT ──
 for msg in st.session_state.history[st.session_state.start_index:]:
     who = "👤 You:" if msg["role"] == "user" else "🤖 Mentor:"
     st.markdown(f"**{who}** {msg['content']}")
