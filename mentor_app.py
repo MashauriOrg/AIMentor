@@ -111,23 +111,34 @@ st.write(AGENDA[i]["prompt"])
 # ── INPUT & CHAT LOGIC ──
 user_input = st.text_area("Your response here", key=f"resp_{i}")
 if st.button("Next"):
-    # Step 0: just a yes/no gate
+    # ** Step 0: confirmation gate **
     if i == 0:
         if user_input.strip().lower() == "yes":
+            # advance into the actual meeting
             st.session_state.step = 1
-            # immediately rerun so the UI flips to Step 1
-            st.experimental_rerun()
         else:
+            # show a one-off warning, don’t call the LLM yet
             st.warning(
                 "Are you sure you don't want to start the meeting yet?\n\n"
-                "Please type **Yes** to begin or continue thinking."
+                "Please type **Yes** when you are ready."
             )
-            # STOP here—don't fall through into your LLM logic
-            st.stop()
+        # halt here so we don’t fall through to the LLM call
+        st.stop()
 
-    # Steps 1+ : normal chat flow
-    # 1) record user message
+    # ** Steps 1+ : normal chat flow **
     st.session_state.history.append({"role": "user", "content": user_input})
+    resp = client.chat.completions.create(
+        model="gpt-4o",
+        messages=st.session_state.history,
+        temperature=0.7,
+    )
+    answer = resp.choices[0].message.content
+    st.session_state.history.append({"role": "assistant", "content": answer})
+    with open(history_file, "w") as f:
+        json.dump(st.session_state.history, f, indent=2)
+    if st.session_state.step < len(AGENDA) - 1:
+        st.session_state.step += 1
+
 
     # 2) call the LLM
     resp = client.chat.completions.create(
