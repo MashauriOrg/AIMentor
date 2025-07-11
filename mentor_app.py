@@ -2,12 +2,12 @@
 
 import os
 import json
+import subprocess
 import streamlit as st
 from openai import OpenAI
 import faiss
 import numpy as np
-from langchain_community.embeddings import OpenAIEmbeddings
-import subprocess
+from langchain.embeddings.openai import OpenAIEmbeddings
 
 # ── AUTO-INGEST: rebuild FAISS index if missing ──
 if not os.path.exists("faiss_index/index.faiss"):
@@ -143,12 +143,12 @@ api_key = os.getenv("OPENAI_API_KEY")
 client  = OpenAI(api_key=api_key)
 st.set_page_config(page_title="AI Mentor", layout="centered")
 
-# — LOAD FAISS INDEX & TEXTS (fallback) —
+# — LOAD FAISS INDEX & TEXTS ──
 index     = faiss.read_index("faiss_index/index.faiss")
 texts     = np.load("faiss_index/texts.npy", allow_pickle=True)
 metadatas = np.load("faiss_index/metadatas.npy", allow_pickle=True)
 
-# — AUTHENTICATION —
+# — AUTHENTICATION ──
 if "team" not in st.session_state:
     team = st.text_input("Team name", key="team_name")
     pw   = st.text_input("Password", type="password", key="team_pw")
@@ -163,7 +163,7 @@ if "team" not in st.session_state:
 team = st.session_state.team
 st.title(f"👥 Team {team} — Your AI Mentor")
 
-# — PERSISTENCE: history + step index —
+# — PERSISTENCE: history + step index ──
 data_dir = "data"
 os.makedirs(data_dir, exist_ok=True)
 history_path = f"{data_dir}/{team}_history.json"
@@ -183,18 +183,18 @@ if "history" not in st.session_state:
 if "step" not in st.session_state:
     st.session_state.step = 0
 
-# — SIDEBAR: agenda navigation —
+# — SIDEBAR: agenda navigation ──
 st.sidebar.title("Meeting Agenda")
 for i, item in enumerate(AGENDA):
     prefix = "➡️" if i == st.session_state.step else "  "
     st.sidebar.write(f"{prefix} Step {i+1}: {item['title']}")
 
-# — MAIN: current step —
+# — MAIN: current step ──
 step = st.session_state.step
 st.header(f"Step {step+1}: {AGENDA[step]['title']}")
 st.write(AGENDA[step]["prompt"])
 
-# — STEP INPUT & ADVANCE —  
+# — STEP INPUT & ADVANCE ──
 current_title = AGENDA[step]["title"]
 
 if current_title == "Team Member Intros":
@@ -206,9 +206,9 @@ if current_title == "Team Member Intros":
             name      = st.text_input("Name (First Last)", key=f"name_{i}")
             email     = st.text_input("Email", key=f"email_{i}")
             role_on   = st.text_input("Role on team", key=f"role_{i}")
-            objective = st.text_area("Program objective", key=f"obj_{i}", height=50)
-            why       = st.text_area("Why you joined", key=f"why_{i}", height=50)
-            strength  = st.text_area("Key strength", key=f"strength_{i}", height=50)
+            objective = st.text_area("Program objective", key=f"obj_{i}")
+            why       = st.text_area("Why you joined", key=f"why_{i}")
+            strength  = st.text_area("Key strength", key=f"strength_{i}")
             members.append({
                 "Name": name,
                 "Email": email,
@@ -263,7 +263,7 @@ else:
         if step < len(AGENDA) - 1:
             st.session_state.step += 1
 
-# — RENDER HISTORY (newest first) —
+# — RENDER HISTORY (newest first) ──
 for msg in reversed(st.session_state.history[1:]):
     prefix = "👤 You:" if msg["role"] == "user" else "🤖 Mentor:"
     st.markdown(f"**{prefix}** {msg['content']}")
