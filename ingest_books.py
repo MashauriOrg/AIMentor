@@ -1,42 +1,44 @@
 # ingest_books.py
 
 import os
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_community.document_loaders import TextLoader
+
+# --- Imports with fallback for embeddings, loaders, and FAISS ---  
+try:
+    from langchain_community.embeddings import OpenAIEmbeddings
+except ImportError:
+    from langchain.embeddings.openai import OpenAIEmbeddings
+
+try:
+    from langchain_community.document_loaders import TextLoader
+except ImportError:
+    from langchain.document_loaders import TextLoader
+
+try:
+    from langchain_community.vectorstores import FAISS
+except ImportError:
+    from langchain.vectorstores import FAISS
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-# 1) Grab your key (make sure you've run `export OPENAI_API_KEY="sk-…”`)
-openai_key = os.getenv("OPENAI_API_KEY", "sk-<YOUR_TEST_KEY_HERE>")
+# --- Make sure OPENAI_API_KEY is set ---
+import os
+openai_key = os.getenv("OPENAI_API_KEY")
+if not openai_key:
+    raise ValueError("Missing OPENAI_API_KEY")
 
-# 2) Instantiate the embeddings once
-embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
-
-# 3) Load all .txt files
+# 1. Load all .txt in extracted_books/
 docs = []
 for fn in os.listdir("extracted_books"):
-    if fn.lower().endswith(".txt"):
+    if fn.endswith(".txt"):
         loader = TextLoader(f"extracted_books/{fn}", encoding="utf8")
         docs.extend(loader.load())
 
-# 4) Split into chunks
-splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-chunks = splitter.split_documents(docs)
+# 2. Split & embed
+splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+chunks   = splitter.split_documents(docs)
+emb      = OpenAIEmbeddings(openai_api_key=openai_key)
+vectorstore = FAISS.from_documents(chunks, emb)
 
-# 5) Build the FAISS index
-vectorstore = FAISS.from_documents(chunks, embeddings)
-
-# 6) Save it locally
-# … your existing ingestion logic …
-
+# 3. Save index
 vectorstore.save_local("faiss_index")
-print(f"✅ Index built with {len(chunks)} chunks")
-
-import numpy as np
-os.makedirs("faiss_index", exist_ok=True)
-texts     = [doc.page_content for doc in chunks]
-metadatas = [doc.metadata       for doc in chunks]
-np.save("faiss_index/texts.npy",     texts,     allow_pickle=True)
-np.save("faiss_index/metadatas.npy", metadatas, allow_pickle=True)
-print(f"✅ Also saved texts.npy & metadatas.npy ({len(texts)} items)")
-
+print("✅ Index built with", len(chunks), "chunks")
