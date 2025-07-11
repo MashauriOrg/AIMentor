@@ -18,9 +18,10 @@ st.set_page_config(page_title="AI Mentor", layout="centered")
 AGENDA = [
     {"title": "Meet Your Mentor",
      "prompt": (
-         "Hello! I’m your AI Mentor with decades of entrepreneurship experience.\n\n"
-         "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n"
-         "**Limitations:** I only know what’s in those books and what you tell me.\n\n"
+         "Hello! I’m your AI Mentor with decades of entrepreneurship experience and really wantto help you successfully develop your venture idea.\n\n"
+         "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n\n"
+         "**Limitations:** I generally start looking for information from the top best practioce startup books in the world before I answer questions.I also remember what you tell me.\n\n"
+         "**Limitations 2:** I may have lots of information but am still taking baby steps to learn how to communicate with you, so please be patient with me.\n\n"
          "❓  Please type any questions you have for me now."
      )},
     {"title": "Confirm to Start",
