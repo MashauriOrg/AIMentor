@@ -20,9 +20,13 @@ AGENDA = [
         "title": "Meet Your Mentor",
         "prompt": (
             "Hello! I’m your AI Mentor with decades of entrepreneurship experience—ready to help you develop your venture.\n\n"
+               "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n\n"
+               "**Limitations:** I generally start looking for information from the top best practioce startup books in the world before I answer questions.I also remember what you tell me.\n\n"
+               "**Limitations 2:** I may have lots of information but am still taking baby steps to learn how to communicate with you, so please be patient with me.\n\n"
+               "**Communication** Our chats are captured below the input area and the things you need to do next are found here, above the  input area.\n\n"
             "**Are you ready to start the meeting?**\n\n"
             "Please type exactly:\n\n"
-            "`Yes, let’s start the meeting`"
+            "`Yes`"
         )
     },
     {
@@ -109,7 +113,7 @@ st.write(AGENDA[i]["prompt"])
 user_input = st.text_area("Your response here", key=f"resp_{i}")
 if st.button("Next"):
     # Special case: first step is just a confirmation, not real chat
-    if i == 0 and user_input.strip().lower() == "yes, let's start the meeting":
+    if i == 0 and user_input.strip().lower() == "Yes":
         # Advance immediately, but do NOT record confirmation in history
         st.session_state.step = 1
     else:
