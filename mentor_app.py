@@ -7,13 +7,13 @@ from openai import OpenAI
 import faiss
 import numpy as np
 from langchain_community.embeddings import OpenAIEmbeddings
-import subprocess, os
+import subprocess
 
-# If the FAISS index isn't on disk, rebuild it now:
+# ── AUTO-INGEST: rebuild FAISS index if missing ──
 if not os.path.exists("faiss_index/index.faiss"):
-   # subprocess.run(["python", "ingest_books.py"], check=True)
+    subprocess.run(["python", "ingest_books.py"], check=True)
 
-# — AGENDA DEFINITIONS —  
+# — AGENDA DEFINITIONS —
 INTRO_STEPS = [
     {
         "title": "Meet Your Mentor",
@@ -67,7 +67,7 @@ MEETING_STEPS = [
         "title": "Problem Statement",
         "prompt": (
             "❗️ **Action:**\n"
-            "Type a **one-sentence problem statement** starting with “The problem we are solving is …”.\n\n"
+            "Type a **one-sentence problem statement** starting with “Our problem is …”.\n\n"
             "Example:\n"
             "```\nOur problem is that small businesses struggle to find affordable marketing tools.\n```"
         )
@@ -145,7 +145,7 @@ st.set_page_config(page_title="AI Mentor", layout="centered")
 
 # — LOAD FAISS INDEX & TEXTS (fallback) —
 index     = faiss.read_index("faiss_index/index.faiss")
-texts     = np.load("faiss_index/texts.npy",     allow_pickle=True)
+texts     = np.load("faiss_index/texts.npy", allow_pickle=True)
 metadatas = np.load("faiss_index/metadatas.npy", allow_pickle=True)
 
 # — AUTHENTICATION —
@@ -267,4 +267,3 @@ else:
 for msg in reversed(st.session_state.history[1:]):
     prefix = "👤 You:" if msg["role"] == "user" else "🤖 Mentor:"
     st.markdown(f"**{prefix}** {msg['content']}")
-
