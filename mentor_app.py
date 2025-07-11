@@ -11,7 +11,7 @@ import subprocess, os
 
 # If the FAISS index isn't on disk, rebuild it now:
 if not os.path.exists("faiss_index/index.faiss"):
-    subprocess.run(["python", "ingest_books.py"], check=True)
+   # subprocess.run(["python", "ingest_books.py"], check=True)
 
 # — AGENDA DEFINITIONS —  
 INTRO_STEPS = [
