@@ -138,6 +138,8 @@ if st.button("Next"):
         st.session_state.history.append({"role": "user", "content": user_input})
 
         # 2) call the LLM
+        messages = [MENTOR_SYSTEM_PROMPT] + st.session_state.history[1:]
+
         resp = client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
