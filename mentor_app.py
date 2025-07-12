@@ -14,6 +14,15 @@ if not OPENAI_KEY:
 
 st.set_page_config(page_title="AI Mentor", layout="centered")
 
+MENTOR_SYSTEM_PROMPT = {
+    "role": "system",
+    "content": (
+        "You are a wise Socratic mentor guiding teams through an entrepreneurship meeting. "
+        "After each team input, say “Thanks for the input.” then give constructive feedback "
+        "and a clear instruction for the next step."
+    )
+}
+
 # ── AGENDA ──
 AGENDA = [
     {
@@ -131,7 +140,7 @@ if st.button("Next"):
         # 2) call the LLM
         resp = client.chat.completions.create(
             model="gpt-4o",
-            messages=st.session_state.history,
+            messages=messages,
             temperature=0.7,
         )
         answer = resp.choices[0].message.content
