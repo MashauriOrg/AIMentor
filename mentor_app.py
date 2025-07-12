@@ -16,8 +16,9 @@ MENTOR_SYSTEM_PROMPT = {
     "role": "system",
     "content": (
         "You are a wise Socratic mentor guiding teams through an entrepreneurship meeting. "
-        "After each team input, say “Thanks for the input.” then give constructive feedback "
-        "and a clear instruction for the next step."
+        "Never say anything about moving to the next agenda step or advancing. "
+        "After each team input, say 'Thanks for the input,' then give constructive feedback, ask thoughtful follow-up questions if appropriate, and guide the discussion. "
+        "Wait for the team to decide when they are ready to move to the next step."
     )
 }
 
@@ -84,12 +85,14 @@ os.makedirs(data_dir, exist_ok=True)
 history_file = os.path.join(data_dir, f"{team}_history.json")
 
 if "history" not in st.session_state:
-    if os.path.exists(history_file):
+    if os.path.exists(history_file) and os.path.getsize(history_file) > 0:
         st.session_state.history = json.load(open(history_file, "r"))
     else:
         st.session_state.history = [
             MENTOR_SYSTEM_PROMPT
         ]
+
+
 
 if "start_index" not in st.session_state:
     st.session_state.start_index = len(st.session_state.history)
@@ -98,7 +101,7 @@ if "step" not in st.session_state:
     st.session_state.step = 0
 
 if "conversation_state" not in st.session_state:
-    st.session_state.conversation_state = "awaiting_team_input"  # can also be awaiting_mentor_reply, awaiting_next_step_confirmation, meeting_done
+    st.session_state.conversation_state = "awaiting_team_input"  # or 'awaiting_mentor_reply', 'meeting_done'
 
 if "clear_input" not in st.session_state:
     st.session_state.clear_input = False
@@ -139,7 +142,6 @@ def add_user_message(text):
 
 # MAIN STATE MACHINE
 
-# (1) If new step, prompt team as mentor message
 if st.session_state.conversation_state == "awaiting_team_input" and (
     len(st.session_state.history) == st.session_state.start_index or
     st.session_state.history[-1]["content"] != AGENDA[i]["prompt"]
@@ -152,54 +154,38 @@ user_input = st.text_area("Your response here", key=f"resp_{i}")
 
 if st.button("Next"):
 
-    # TEAM INPUTS TO AGENDA PROMPT
+    # TEAM INPUTS TO AGENDA PROMPT OR TO CONTINUE CHAT
     if st.session_state.conversation_state == "awaiting_team_input":
         response = user_input.strip()
         if response:
-            add_user_message(response)
-            # Mentor responds to input
-            resp = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[MENTOR_SYSTEM_PROMPT] + st.session_state.history[1:],
-                temperature=0.7,
-            )
-            mentor_reply = resp.choices[0].message.content
-            add_mentor_message(mentor_reply)
-            st.session_state.conversation_state = "awaiting_next_step_confirmation"
-            st.session_state.clear_input = True
-            st.rerun()
+            # If user types "next", advance to the next agenda item
+            if response.lower() in ["next", "yes", "y", "ready", "continue"]:
+                if st.session_state.step < len(AGENDA) - 1:
+                    st.session_state.step += 1
+                    st.session_state.conversation_state = "awaiting_team_input"
+                    st.session_state.clear_input = True
+                    st.rerun()
+                else:
+                    # Meeting done!
+                    add_mentor_message("Thank you for your contributions! Meeting complete. 🎉")
+                    st.session_state.conversation_state = "meeting_done"
+                    st.session_state.clear_input = True
+                    st.rerun()
+            else:
+                add_user_message(response)
+                # Mentor responds to input
+                resp = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[MENTOR_SYSTEM_PROMPT] + st.session_state.history[1:],
+                    temperature=0.7,
+                )
+                mentor_reply = resp.choices[0].message.content
+                add_mentor_message(mentor_reply)
+                # (App, not mentor, posts navigation hint below)
+                st.session_state.clear_input = True
+                st.rerun()
         else:
             st.warning("Please enter a response before clicking Next.")
-
-    # ASK: Ready to move on?
-    elif st.session_state.conversation_state == "awaiting_next_step_confirmation":
-        response = user_input.strip().lower()
-        if response in ["yes", "y", "ready", "continue", "next"]:
-            if st.session_state.step < len(AGENDA) - 1:
-                st.session_state.step += 1
-                st.session_state.conversation_state = "awaiting_team_input"
-                st.session_state.clear_input = True
-                st.rerun()
-            else:
-                # Meeting done!
-                add_mentor_message("Thank you for your contributions! Meeting complete. 🎉")
-                st.session_state.conversation_state = "meeting_done"
-                st.session_state.clear_input = True
-                st.rerun()
-        else:
-            # Any other response = more Q&A
-            add_user_message(user_input)
-            resp = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[MENTOR_SYSTEM_PROMPT] + st.session_state.history[1:],
-                temperature=0.7,
-            )
-            mentor_reply = resp.choices[0].message.content
-            add_mentor_message(mentor_reply)
-            # Ask again if ready
-            add_mentor_message("Are you ready to move to the next step? (Type 'Yes' to continue, or ask more questions.)")
-            st.session_state.clear_input = True
-            st.rerun()
 
     elif st.session_state.conversation_state == "meeting_done":
         st.info("This meeting is finished! You can review the chat above or restart.")
@@ -209,4 +195,16 @@ if st.button("Next"):
         st.session_state.clear_input = True
         st.rerun()
 
-
+# -- APP-LEVEL NAVIGATION PROMPT (shows after any mentor reply, except at end) --
+if (
+    st.session_state.conversation_state == "awaiting_team_input"
+    and len(st.session_state.history) > st.session_state.start_index + 1
+    and st.session_state.history[-1]["role"] == "assistant"
+    and st.session_state.step < len(AGENDA)
+):
+    st.markdown(
+        "<div style='background:#f8f9fa; border-left:4px solid #007bff; padding:0.75em 1em; margin:1em 0 1.5em 0;'>"
+        "<b>Would you like to keep discussing this topic, or move to the next step?</b><br>"
+        "Type your next comment or question, or type <b>Next</b> to move on.</div>",
+        unsafe_allow_html=True,
+    )
