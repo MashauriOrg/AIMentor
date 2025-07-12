@@ -2,6 +2,18 @@ import os
 import json
 import streamlit as st
 from openai import OpenAI
+import streamlit as st
+
+import streamlit as st
+
+col1, col2 = st.columns([1, 6])
+with col1:
+    st.image("Mashauri_logo.png", width=75)
+with col2:
+    st.markdown("<h1 style='color:#B00; margin-bottom:0;'>MashaurMentorBot</h1>", unsafe_allow_html=True)
+
+
+
 
 # STREAMLIT & OPENAI SETUP
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
