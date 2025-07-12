@@ -72,9 +72,14 @@ if "team" not in st.session_state:
     if login_clicked:
         if pw == "letmein":
             st.session_state.team = name
+            st.rerun()  # <-- Rerun immediately so the next view loads!
         else:
             st.error("Invalid credentials")
     st.stop()
+
+# Only runs if the user has logged in successfully!
+team = st.session_state.team
+st.title(f"👥 Team {team} — AI Mentor")
 
 team = st.session_state.team
 st.title(f"👥 Team {team} — AI Mentor")
@@ -125,6 +130,7 @@ if st.button("Next"):
     if i == 0:
         if user_input.strip().lower() == "yes":
             st.session_state.step = 1
+            st.rerun()  # <-- This ensures the UI advances on a single click
         else:
             # show one-off warning instead of saving into history
             st.warning(
