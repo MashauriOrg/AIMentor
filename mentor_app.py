@@ -145,7 +145,14 @@ if st.session_state.clear_input:
     st.session_state[f"resp_{i}"] = ""
     st.session_state.clear_input = False
 
-# ── INPUT & CHAT LOGIC ──
+# ── RENDER CHAT HISTORY AT THE TOP ──
+for msg in st.session_state.history[st.session_state.start_index:]:
+    who = "👤 You:" if msg["role"] == "user" else "🤖 Mentor:"
+    st.markdown(f"**{who}** {msg['content']}")
+
+st.markdown("---")  # nice separator line before input
+
+# ── INPUT & CHAT LOGIC (NOW AT BOTTOM) ──
 user_input = st.text_area("Your response here", key=f"resp_{i}")
 
 if st.button("Next"):
@@ -238,8 +245,3 @@ if st.button("Next"):
         # 5) advance to next step
         if st.session_state.step < len(AGENDA) - 1:
             st.session_state.step += 1
-
-# ── RENDER ONLY THIS SESSION’S CHAT ──
-for msg in st.session_state.history[st.session_state.start_index:]:
-    who = "👤 You:" if msg["role"] == "user" else "🤖 Mentor:"
-    st.markdown(f"**{who}** {msg['content']}")
