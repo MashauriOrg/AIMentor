@@ -81,9 +81,6 @@ if "team" not in st.session_state:
 team = st.session_state.team
 st.title(f"👥 Team {team} — AI Mentor")
 
-team = st.session_state.team
-st.title(f"👥 Team {team} — AI Mentor")
-
 # ── PERSISTENCE: HISTORY & STEP ──
 data_dir     = "data"
 os.makedirs(data_dir, exist_ok=True)
@@ -111,6 +108,16 @@ if "start_index" not in st.session_state:
 if "step" not in st.session_state:
     st.session_state.step = 0
 
+# ---- GATE STATE FOR MEETING START ----
+if "gate_state" not in st.session_state:
+    st.session_state.gate_state = "initial"
+if "gate_question" not in st.session_state:
+    st.session_state.gate_question = ""
+
+# ---- INPUT CLEAR FLAG ----
+if "clear_input" not in st.session_state:
+    st.session_state.clear_input = False
+
 # ── SIDEBAR: Agenda Navigation ──
 st.sidebar.title("Agenda")
 for idx, item in enumerate(AGENDA):
@@ -122,21 +129,89 @@ i = st.session_state.step
 st.header(f"Step {i+1}: {AGENDA[i]['title']}")
 st.write(AGENDA[i]["prompt"])
 
+# Show gate state-specific prompt/warning
+if i == 0:
+    gate_state = st.session_state.gate_state
+    if gate_state == "confirming":
+        st.warning(
+            "Are you sure you do not want to start the meeting?\n\n"
+            "Please type **I want to start the meeting** or **I have a question first**."
+        )
+    elif gate_state == "asking_question":
+        st.info("Please enter your question for the mentor.")
+
+# ---- CLEAR INPUT BEFORE RENDERING ----
+if st.session_state.clear_input:
+    st.session_state[f"resp_{i}"] = ""
+    st.session_state.clear_input = False
+
 # ── INPUT & CHAT LOGIC ──
 user_input = st.text_area("Your response here", key=f"resp_{i}")
+
 if st.button("Next"):
 
-    # --- Step 0: yes/no gate (no LLM call) ---
+    # --- Step 0: custom meeting gate logic ---
     if i == 0:
-        if user_input.strip().lower() == "yes":
-            st.session_state.step = 1
-            st.rerun()  # <-- This ensures the UI advances on a single click
+        gate_state = st.session_state.gate_state
+        response = user_input.strip()
+
+        # --- INITIAL GATE STATE ---
+        if gate_state == "initial":
+            if response.lower() in ["yes", "i want to start the meeting"]:
+                st.session_state.step = 1
+                st.session_state.gate_state = "initial"
+                st.session_state.clear_input = True
+                st.rerun()
+            else:
+                st.session_state.gate_state = "confirming"
+                st.session_state.clear_input = True
+                st.rerun()
+
+        # --- CONFIRMING STATE ---
+        elif gate_state == "confirming":
+            if response.lower() == "i want to start the meeting":
+                st.session_state.step = 1
+                st.session_state.gate_state = "initial"
+                st.session_state.clear_input = True
+                st.rerun()
+            elif response.lower() == "i have a question first":
+                st.session_state.gate_state = "asking_question"
+                st.session_state.clear_input = True
+                st.rerun()
+            else:
+                # Stay in confirming, just clear and reprompt
+                st.session_state.clear_input = True
+                st.rerun()
+
+        # --- ASKING QUESTION STATE ---
+        elif gate_state == "asking_question":
+            # If user enters a question (not empty)
+            if response:
+                # Log user question
+                st.session_state.history.append({"role": "user", "content": response})
+
+                # Call LLM mentor to answer
+                resp = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[MENTOR_SYSTEM_PROMPT] + st.session_state.history[1:],
+                    temperature=0.7,
+                )
+                answer = resp.choices[0].message.content
+                st.session_state.history.append({"role": "assistant", "content": answer})
+
+                with open(history_file, "w") as f:
+                    json.dump(st.session_state.history, f, indent=2)
+
+                st.session_state.gate_state = "initial"
+                st.session_state.clear_input = True
+                st.rerun()
+            else:
+                st.warning("Please type your question first.")
+
         else:
-            # show one-off warning instead of saving into history
-            st.warning(
-                "Are you sure you do not want to start the meeting now?\n\n"
-                "Please type **Yes** to begin or **No** if you want to delay."
-            )
+            st.session_state.gate_state = "initial"
+            st.session_state.clear_input = True
+            st.rerun()
 
     # --- Steps 1+ : real chat flow ---
     else:
