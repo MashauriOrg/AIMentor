@@ -11,7 +11,7 @@ with col1:
 with col2:
     st.markdown(
         "<h1 style='color:#1a2533;margin-bottom:0;'>"
-        "👥 Team Boss — AI Mentor</h1>",
+        "👥 AI Mentor</h1>",
         unsafe_allow_html=True,
     )
 
@@ -27,11 +27,11 @@ st.set_page_config(page_title="AI Mentor", layout="centered")
 MENTOR_SYSTEM_PROMPT = {
     "role": "system",
     "content": (
-        "You are a wise Socratic mentor guiding teams through an entrepreneurship meeting. "
-        "Never say anything about moving to the next agenda step unless explicitly asked. "
-        "After each team input, say 'Thanks for the input,' then give constructive feedback, "
-        "ask thoughtful follow-up questions if appropriate, and guide the discussion. "
-        "Wait for the team to decide when they are ready to move to the next step by typing 'Next'."
+        "You are a wise Socratic mentor for entrepreneurship teams. "
+        "ONLY respond to the user's latest input and the current agenda question shown above. "
+        "Never ask what the next agenda step is; the app controls the agenda. "
+        "After each team input, thank them, give constructive feedback, and ask any follow-up questions. "
+        "Wait for the team to decide when to move on by typing 'Next'."
     ),
 }
 
@@ -157,24 +157,43 @@ user_input = st.chat_input("Your message here...")
 
 if user_input is not None and user_input.strip():
     response = user_input.strip()
+
+    # Only allow "Next"/"Yes" to advance from agenda steps AFTER the first one
+    is_first_agenda = st.session_state.step == 0
+
     if st.session_state.state == "awaiting_team_input":
         add_user_message(response)
-        # LLM mentor reply
-        resp = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[MENTOR_SYSTEM_PROMPT] + st.session_state.history[1:],
-            temperature=0.7,
-        )
-        mentor_reply = resp.choices[0].message.content
-        add_mentor_message(mentor_reply)
-        # Ask if want to discuss more or go next
-        add_mentor_message(
-            "Would you like to discuss this topic further, or move to the next stage of the meeting?\n\n"
-            "👉 Type your next comment or question to continue, or type **Next** to move on."
-        )
-        st.session_state.state = "awaiting_next_action"
-        st.rerun()
+
+        # If we are at the very first agenda step (Meet Your Mentor)
+        if is_first_agenda:
+            # Only advance if user types exactly "Yes"
+            if response.lower().strip() == "yes":
+                st.session_state.step += 1
+                st.session_state.state = "awaiting_agenda_prompt"
+                st.rerun()
+            else:
+                # If not "yes", prompt again
+                add_mentor_message("Please type exactly: `Yes` to start the meeting.")
+                st.rerun()
+        else:
+            # For all other agenda steps
+            resp = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[MENTOR_SYSTEM_PROMPT] + st.session_state.history[1:],
+                temperature=0.7,
+            )
+            mentor_reply = resp.choices[0].message.content
+            add_mentor_message(mentor_reply)
+            # Now ask if want to discuss more or move on
+            add_mentor_message(
+                "Would you like to discuss this topic further, or move to the next stage of the meeting?\n\n"
+                "👉 Type your next comment or question to continue, or type **Next** to move on."
+            )
+            st.session_state.state = "awaiting_next_action"
+            st.rerun()
+
     elif st.session_state.state == "awaiting_next_action":
+        # Only advance step if user says "next" etc. (NEVER advance from the very first step)
         if response.lower().strip() in ["next", "yes", "continue", "go next", "y"]:
             if st.session_state.step < len(AGENDA) - 1:
                 st.session_state.step += 1
@@ -185,6 +204,7 @@ if user_input is not None and user_input.strip():
                 st.session_state.state = "meeting_done"
                 st.rerun()
         else:
+            # Continue discussing current agenda topic
             add_user_message(response)
             resp = client.chat.completions.create(
                 model="gpt-4o",
@@ -199,5 +219,6 @@ if user_input is not None and user_input.strip():
             )
             st.session_state.state = "awaiting_next_action"
             st.rerun()
+
     elif st.session_state.state == "meeting_done":
         st.info("This meeting is finished! You can review the chat above or close the page.")
