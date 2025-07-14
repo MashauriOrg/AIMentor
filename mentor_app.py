@@ -65,8 +65,8 @@ AGENDA = [
     {
         "title": "Problem Statement",
         "prompt": (
-            "❗️ **Action:** Provide a one-sentence problem starting “Our problem is …”.\n\n"
-            "Example:\n```\nOur problem is that small businesses struggle to find affordable marketing tools.\n```"
+            "❗️ **Action:** Provide a one-sentence problem starting “The problem we are solving is …”.\n\n"
+            "Example:\n```\nThe problem we are solving is that small businesses struggle to find affordable marketing tools.\n```"
         ),
     },
     {
@@ -187,7 +187,7 @@ if user_input is not None and user_input.strip():
             # Now ask if want to discuss more or move on
             add_mentor_message(
                 "Would you like to discuss this topic further, or move to the next stage of the meeting?\n\n"
-                "👉 Type your next comment or question to continue, or type **Next** to move on."
+                "👉 Type your next comment, reply or question to continue, or type **Next** to move on to next stage."
             )
             st.session_state.state = "awaiting_next_action"
             st.rerun()
