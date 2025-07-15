@@ -60,8 +60,8 @@ AGENDA = [
     {
         "title": "Welcome & Introductions",
         "prompt": (
-            "❗️ **Action:** Enter each team member’s full name, one per line.\n\n"
-            "Example:\n```\nAlice Smith\nBob Johnson\nCarol Lee\n```"
+            "❗️ **Action:** Enter each team member’s full name, one per line. Add their relevant skills if you like too.\n\n"
+            "Example:\n```\nAlice Smith - Tech\nBob Johnson - Communications\nCarol Lee - Problem owner\n```"
         ),
     },
     {
@@ -203,7 +203,7 @@ if user_input is not None and user_input.strip():
                 st.session_state.state = "awaiting_agenda_prompt"
                 st.rerun()
             else:
-                add_mentor_message("Meeting complete! Thank you for your participation. 🎉")
+                add_mentor_message("Meeting complete! Thank you for your participation. 🎉.\n\n" "Click Next again and you will be taken to the Google form to complete at the end of every mentor meeting")
                 st.session_state.state = "meeting_done"
                 st.rerun()
         else:
