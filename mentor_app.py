@@ -44,6 +44,8 @@ AGENDA = [
             "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n\n"
             "**Limitations:** I start by reviewing top-practice startup books before I answer questions, and I remember what you tell me.\n\n"
             "**Communication:** Our chats appear below. Each step will appear in the conversation.\n\n"
+            "**Process:** I will guide you through the steps of the meeting and at each stage will ask you if you want to discuss more or move on to the next stage of the meeting.\n\n"
+            "**Note:** On most screens, the agenda (and where we are in the agenda) will appear on the left hand side.\n\n"
             "**Are you ready to start the meeting?**\n\n"
             "Please type exactly: `Yes`"
         ),
@@ -65,8 +67,8 @@ AGENDA = [
     {
         "title": "Problem Statement",
         "prompt": (
-            "❗️ **Action:** Provide a one-sentence problem starting “Our problem is …”.\n\n"
-            "Example:\n```\nOur problem is that small businesses struggle to find affordable marketing tools.\n```"
+            "❗️ **Action:** Provide a one-sentence problem starting “The problem we are solving is …”.\n\n"
+            "Example:\n```\nThe problem we are solving is that small businesses struggle to find affordable marketing tools.\n```"
         ),
     },
     {
@@ -80,7 +82,8 @@ AGENDA = [
         "title": "Wrap-Up",
         "prompt": (
             "Thank you for participating in this mentor meeting! "
-            "If you’d like a summary or have follow-up questions, just ask."
+            "If you’d like a summary or have follow-up questions, just ask.\n\n"
+            "After you have your summary, presss \"Next\" again and you will get taken to the post meeting Google form.\n\n"
         ),
     },
 ]
@@ -187,7 +190,7 @@ if user_input is not None and user_input.strip():
             # Now ask if want to discuss more or move on
             add_mentor_message(
                 "Would you like to discuss this topic further, or move to the next stage of the meeting?\n\n"
-                "👉 Type your next comment or question to continue, or type **Next** to move on."
+                "👉 Type your next comment, reply or question to continue, or type **Next** to move on to next meeting stage."
             )
             st.session_state.state = "awaiting_next_action"
             st.rerun()
@@ -221,4 +224,4 @@ if user_input is not None and user_input.strip():
             st.rerun()
 
     elif st.session_state.state == "meeting_done":
-        st.info("This meeting is finished! You can review the chat above or close the page.")
+        st.info("This meeting is finished! You can review the chat above or close the page\n\n " "Please complete the post meeting Google form https://docs.google.com/forms/d/e/1FAIpQLSc0QN87pDYQVamKVpYtUQyfO9qPq0CWrMjc5-kqLMZ4HawILg/viewform?usp=preview")
