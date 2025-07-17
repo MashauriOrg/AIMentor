@@ -147,9 +147,11 @@ def add_user_message(text):
     save_history()
 
 # ---------- MAIN CHAT AREA ----------
-for msg in st.session_state.history[1:]:  # skip system prompt in display
-    who = "👤 You:" if msg["role"] == "user" else "🤖 Mentor:"
-    st.markdown(f"**{who}** {msg['content']}")
+for msg in st.session_state.history[1:]:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+
 
 # Show initial agenda prompt (only once per agenda step)
 if st.session_state.state == "awaiting_agenda_prompt":
