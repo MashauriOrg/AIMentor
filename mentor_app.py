@@ -40,6 +40,10 @@ MENTOR_SYSTEM_PROMPT = {
 
 # ---------- AGENDA ----------
 AGENDA = [
+ #   { "title": "Mentor Preferences",
+#    "prompt": ("Would you like your mentor to adopt a specific role or draw on particular expertise (e.g., expertise in agricultural issues in rural Africa)? Please describe any focus areas."),
+#    },
+
     {
         "title": "Meet Your Mentor",
         "prompt": (
@@ -53,13 +57,7 @@ AGENDA = [
             "Please type exactly: `Yes`"
         ),
     },
-    {
-        "title": "Team Objectives",
-        "prompt": (
-            "❗️ **Action:** What are the team’s main objectives for this venture? "
-            "Please write your top 1-3 goals or hopes for this project."
-        ),
-    },
+    
     {
         "title": "Welcome & Introductions",
         "prompt": (
@@ -79,6 +77,13 @@ AGENDA = [
         "prompt": (
             "❗️ **Action:** Provide a one-sentence solution starting “Our solution is …”.\n\n"
             "Example:\n```\nOur solution is a mobile app that automates social-media posts for local shops.\n```"
+        ),
+    },
+    {
+        "title": "Team Objectives",
+        "prompt": (
+            "❗️ **Action:** What are the team’s main objectives for this venture? "
+            "Please write your top 1-3 goals or hopes for this project."
         ),
     },
     {
