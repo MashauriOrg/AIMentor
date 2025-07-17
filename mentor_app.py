@@ -42,7 +42,7 @@ AGENDA = [
     {
         "title": "Meet Your Mentor",
         "prompt": (
-            "Hello! I’m your AI Mentor with decades of entrepreneurship experience—ready to help you develop your venture.\n\n"
+            "Hello! I’m your AI Mentor with decades of entrepreneurship experience and really want to help you successfully develop your venture idea.\n\n"
             "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n\n"
             "**Limitations:** I start by reviewing top-practice startup books before I answer questions, and I remember what you tell me.\n\n"
             "**Communication:** Our chats appear below. Each step will appear in the conversation.\n\n"
@@ -129,7 +129,7 @@ if "history" not in st.session_state:
 # ---------- SIDEBAR ----------
 st.sidebar.title("Agenda")
 for idx, item in enumerate(AGENDA):
-    marker = "➡️" if idx == st.session_state.step else ""
+    marker = "➡️" if idx == st.session_state.step else "  "
     st.sidebar.write(f"{marker} Step {idx+1}: {item['title']}")
 
 i = st.session_state.step
