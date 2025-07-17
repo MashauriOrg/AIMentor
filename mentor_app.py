@@ -208,6 +208,7 @@ if user_input is not None and user_input.strip():
     elif st.session_state.state == "awaiting_next_action":
         # Only advance step if user says "next" etc. (NEVER advance from the very first step)
         if response.lower().strip() in ["next", "yes", "continue", "go next", "y"]:
+            add_user_message(response)  # record the user's request to advance 
             if st.session_state.step < len(AGENDA) - 1:
                 st.session_state.step += 1
                 st.session_state.state = "awaiting_agenda_prompt"
