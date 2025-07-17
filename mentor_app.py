@@ -4,6 +4,8 @@ from datetime import datetime
 import streamlit as st
 from openai import OpenAI
 
+st.set_page_config(page_title="AI Mentor", layout="centered")
+
 # ---------- LOGO + TITLE ----------
 col1, col2 = st.columns([1, 7])
 with col1:
@@ -22,7 +24,7 @@ if not OPENAI_KEY:
     st.error("Missing OPENAI_API_KEY")
     st.stop()
 
-st.set_page_config(page_title="AI Mentor", layout="centered")
+
 
 MENTOR_SYSTEM_PROMPT = {
     "role": "system",
