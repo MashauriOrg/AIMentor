@@ -1,22 +1,13 @@
-# Byte-compiled / optimized / DLL files
+# ignore compiled Python, VSCode, virtualenvs, macOS files, etc.
 __pycache__/
 *.py[cod]
-*$py.class
-
-# VSCode settings
 .vscode/
-
-# Python virtual environments
 mentorenv/
 venv/
 .env/
-
-# ignore FAISS index and numpy dumps
-faiss_index/
-
-# macOS system files
 .DS_Store
-
-# Streamlit static/work dirs (if any)
 .streamlit/
+
+# Don’t commit FAISS artifacts
 faiss_index/
+
