@@ -121,7 +121,11 @@ if not session_id:
     st.session_state.session_id = datetime.now().strftime("%Y%m%dT%H%M%S")
     session_id = st.session_state.session_id
 
-data_dir = "data"
+#data_dir = "data"
+# use an env var if set, otherwise default to ./data
+data_dir = os.getenv("CHAT_HISTORY_DIR", "data")
+os.makedirs(data_dir, exist_ok=True)
+
 os.makedirs(data_dir, exist_ok=True)
 history_file = os.path.join(data_dir, f"{team}_{session_id}_history.json")
 
