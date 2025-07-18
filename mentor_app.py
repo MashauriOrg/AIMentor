@@ -7,14 +7,18 @@ from openai import OpenAI
 st.set_page_config(page_title="Mashauri AI Mentor", layout="centered")
 
 # ---------- LOGO + TITLE ----------
-col1, col2 = st.columns([1, 7])
+
+col1, col2, col3 = st.columns([1, 6, 1])
 with col1:
     st.image("Mashauri_logo.png", width=75)
 with col2:
     st.markdown(
-        "<h1 style='color:inherit;margin-bottom:0;'>👥 SAVI \n\n (your USSAVI AI Mentor)</h1>",
+        "<h1 style='color:inherit;margin-bottom:0;'>👥 SAVI<br/>(your USSAVI AI Mentor)</h1>",
         unsafe_allow_html=True,
     )
+with col3:
+    st.image("SAVI HQ.png", width=100)
+
 
 # ---------- STREAMLIT & OPENAI SETUP ----------
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
