@@ -51,7 +51,8 @@ AGENDA = [
             "**Limitations:** I start by reviewing top-practice startup books before I answer questions, and I remember what you tell me.\n\n"
             "**Communication:** Our chats appear below. Each step will appear in the conversation.\n\n"
             "**Process:** I will guide you through the steps of the meeting and at each stage will ask you if you want to discuss more or move on to the next stage of the meeting.\n\n"
-            "**Note:** On most screens, the agenda (and where we are in the agenda) will appear on the left hand side.\n\n"
+            "**Note 1:** On most screens, the agenda (and where we are in the agenda) will appear on the left hand side.\n\n"
+            "**Note 2:**This mentor is designed to give you exceptional support on developing your USSAVI venture idea. Please do not use it for any other purpose.\n\n"
             "**Are you ready to start the meeting?**\n\n"
             "Please type exactly: `Yes`"
         ),
