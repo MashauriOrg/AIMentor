@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 import streamlit as st
 from openai import OpenAI
+from book_retrieval import search_books
 
 st.set_page_config(page_title="Mashauri AI Mentor", layout="centered")
 
@@ -194,9 +195,18 @@ if user_input is not None and user_input.strip():
                 st.rerun()
         else:
             # For all other agenda steps
+            snippets = search_books(response)
+            context_msgs = []
+            if snippets:
+                text = "\n---\n".join(snippets)
+                context_msgs.append({
+                    "role": "system",
+                    "content": "Relevant book excerpts:\n" + text,
+                })
+
             resp = client.chat.completions.create(
                 model="gpt-4o",
-                messages=[MENTOR_SYSTEM_PROMPT] + st.session_state.history[1:],
+                messages=[MENTOR_SYSTEM_PROMPT] + context_msgs + st.session_state.history[1:],
                 temperature=0.7,
             )
             mentor_reply = resp.choices[0].message.content
@@ -224,9 +234,17 @@ if user_input is not None and user_input.strip():
         else:
             # Continue discussing current agenda topic
             add_user_message(response)
+            snippets = search_books(response)
+            context_msgs = []
+            if snippets:
+                text = "\n---\n".join(snippets)
+                context_msgs.append({
+                    "role": "system",
+                    "content": "Relevant book excerpts:\n" + text,
+                })
             resp = client.chat.completions.create(
                 model="gpt-4o",
-                messages=[MENTOR_SYSTEM_PROMPT] + st.session_state.history[1:],
+                messages=[MENTOR_SYSTEM_PROMPT] + context_msgs + st.session_state.history[1:],
                 temperature=0.7,
             )
             mentor_reply = resp.choices[0].message.content
