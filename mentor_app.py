@@ -101,7 +101,7 @@ if "team" not in st.session_state:
     pw = st.text_input("Password", type="password")
     login_clicked = st.button("Login")
     if login_clicked:
-        if pw == "letmein":
+        if pw == "guideme":
             st.session_state.team = name
             st.session_state.session_id = datetime.now().strftime("%Y%m%dT%H%M%S")
             st.rerun()
