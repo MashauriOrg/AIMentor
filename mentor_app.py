@@ -127,7 +127,7 @@ if not session_id:
 
 
 # use CHAT_HISTORY_DIR if set, otherwise write under Render’s persistent disk
-data_dir = os.getenv("CHAT_HISTORY_DIR", "/mnt/data/chat_history")
+data_dir = os.getenv("CHAT_HISTORY_DIR", "/mnt/data/faiss_index/chat_history")
 os.makedirs(data_dir, exist_ok=True)
 
 

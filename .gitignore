@@ -15,3 +15,5 @@ faiss_index/
 data/
 
 /mnt/data/chat_history/
+/mnt/data/faiss_index/chat_history/
+
