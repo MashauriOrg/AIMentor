@@ -12,9 +12,7 @@ with col1:
     st.image("Mashauri_logo.png", width=75)
 with col2:
     st.markdown(
-        "<h1 style='color:inherit;margin-bottom:0;'>👥 AI Mashauri Mentor</h1>",
-#        "<h1 style='color:#1a2533;margin-bottom:0;'>"
-#        "👥 AI Mentor</h1>",
+        "<h1 style='color:inherit;margin-bottom:0;'>👥 Savi \n\n (your USSAVI AI Mentor)</h1>",
         unsafe_allow_html=True,
     )
 
