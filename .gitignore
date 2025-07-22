@@ -11,3 +11,9 @@ venv/
 # Don’t commit FAISS artifacts
 faiss_index/
 
+# chat history folder
+data/
+
+/mnt/data/chat_history/
+/mnt/data/faiss_index/chat_history/
+
