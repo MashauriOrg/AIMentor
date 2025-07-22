@@ -45,3 +45,11 @@ Our app uses a large FAISS index file (`index.faiss`) to power fast, AI-based se
    In order to keep the code the same locally and on Render, we added an environment variable:
    ```bash
    FAISS_INDEX_PATH=/mnt/data/faiss_index/index.faiss
+
+
+###   ### Chat History  
+To persist user conversations (e.g. for auditing), the app writes JSON files into `$CHAT_HISTORY_DIR` (defaults to `./data`).  
+Make sure `data/` is git-ignored and, in production (e.g. on Render), set:
+```bash
+render env set CHAT_HISTORY_DIR=/mnt/data/chat_history
+
