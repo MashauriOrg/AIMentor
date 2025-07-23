@@ -5,6 +5,14 @@ import streamlit as st
 from openai import OpenAI
 from book_retrieval import search_books
 
+def load_agenda(meeting_name: str) -> list[dict] | None:
+    """Load an agenda JSON file from the meeting_scripts directory."""
+    path = os.path.join("meeting_scripts", f"{meeting_name}.json")
+    if not os.path.exists(path):
+        return None
+    with open(path, "r") as f:
+        return json.load(f)
+
 st.set_page_config(page_title="Mashauri AI Mentor", layout="centered")
 
 # ---------- LOGO + TITLE ----------
@@ -20,7 +28,6 @@ with col2:
 with col3:
     st.image("SAVI HQ.png", width=100)
 
-
 # ---------- STREAMLIT & OPENAI SETUP ----------
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_KEY)
@@ -28,78 +35,26 @@ if not OPENAI_KEY:
     st.error("Missing OPENAI_API_KEY")
     st.stop()
 
-
-
+# ---------- SYSTEM PROMPT ----------
 MENTOR_SYSTEM_PROMPT = {
     "role": "system",
     "content": (
- #       "You are a wise Socratic mentor for entrepreneurship teams. "
-        "You are a seasoned Socratic entrepreneurship mentor for entrepreneurship teams. When appropriate, provide short case studies or real examples drawn from the indexed book library or reputable web sources. After each response, ask whether the team would like you to share a relevant experience."
+        "You are a seasoned Socratic entrepreneurship mentor for entrepreneurship teams. "
+        "When appropriate, provide short case studies or real examples drawn from the indexed book library or reputable web sources. "
+        "After each response, ask whether the team would like you to share a relevant experience. "
         "ONLY respond to the user's latest input and the current agenda question shown above. "
         "Never ask what the next agenda step is; the app controls the agenda. "
-        "After each team input, thank them, give constructive feedback, and ask any follow-up questions. Ask also if they want you to to share real life experiences with them too"
+        "After each team input, thank them, give constructive feedback, and ask any follow-up questions. "
+        "Ask also if they want you to share real life experiences with them too. "
         "Wait for the team to decide when to move on by typing 'Next'."
     ),
 }
 
 # ---------- AGENDA ----------
-AGENDA = [
- #   { "title": "Mentor Preferences",
-#    "prompt": ("Would you like your mentor to adopt a specific role or draw on particular expertise (e.g., expertise in agricultural issues in rural Africa)? Please describe any focus areas."),
-#    },
-
-    {
-        "title": "Meet Your Mentor",
-        "prompt": (
-            "Hello! I’m your AI Mentor with decades of entrepreneurship experience and really want to help you successfully develop your venture idea.\n\n"
-            "**Capabilities:** I ask Socratic questions and draw on a curated book library.\n\n"
-            "**Limitations:** I start by reviewing top-practice startup books before I answer questions, and I remember what you tell me.\n\n"
-            "**Communication:** Our chats appear below. Each step will appear in the conversation.\n\n"
-            "**Process:** I will guide you through the steps of the meeting and at each stage will ask you if you want to discuss more or move on to the next stage of the meeting.\n\n"
-            "**Note 1:** On most screens, the agenda (and where we are in the agenda) will appear on the left hand side.\n\n"
-            "**Note 2:**This mentor is designed to give you exceptional support on developing your USSAVI venture idea. Please do not use it for any other purpose.\n\n"
-            "**Are you ready to start the meeting?**\n\n"
-            "Please type exactly: `Yes`"
-        ),
-    },
-    
-    {
-        "title": "Welcome & Introductions",
-        "prompt": (
-            "❗️ **Action:** Enter each team member’s full name, one per line. Add their relevant skills if you like too.\n\n"
-            "Example:\n```\nAlice Smith - Tech\nBob Johnson - Communications\nCarol Lee - Problem owner\n```"
-        ),
-    },
-    {
-        "title": "Problem Statement",
-        "prompt": (
-            "❗️ **Action:** Provide a one-sentence problem starting “The problem we are solving is …”.\n\n"
-            "Example:\n```\nThe problem we are solving is that small businesses struggle to find affordable marketing tools.\n```"
-        ),
-    },
-    {
-        "title": "Solution Overview",
-        "prompt": (
-            "❗️ **Action:** Provide a one-sentence solution starting “Our solution is …”.\n\n"
-            "Example:\n```\nOur solution is a mobile app that automates social-media posts for local shops.\n```"
-        ),
-    },
-    {
-        "title": "Team Objectives",
-        "prompt": (
-            "❗️ **Action:** What are the team’s main objectives for this venture? "
-            "Please write your top 1-3 goals or hopes for this project."
-        ),
-    },
-    {
-        "title": "Wrap-Up",
-        "prompt": (
-            "Thank you for participating in this mentor meeting! "
-            "If you’d like a summary or have follow-up questions, just ask.\n\n"
-            "After you have your summary, presss \"Next\" again and you will get taken to the post meeting Google form.\n\n"
-        ),
-    },
-]
+AGENDA = load_agenda("kickoff")
+if AGENDA is None:
+    st.error("Couldn't find meeting_scripts/kickoff.json")
+    st.stop()
 
 # ---------- AUTHENTICATION & SESSION ----------
 if "team" not in st.session_state:

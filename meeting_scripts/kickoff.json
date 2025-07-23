@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Meet Your Mentor",
+    "prompt": "Hello! I’m your AI Mentor … Please type exactly: `Yes`"
+  },
+  {
+    "title": "Welcome & Introductions",
+    "prompt": "❗️ **Action:** Enter each team member’s full name …"
+  },
+  {
+    "title": "Problem Statement",
+    "prompt": "❗️ **Action:** Provide a one-sentence problem …"
+  },
+  {
+    "title": "Solution Overview",
+    "prompt": "❗️ **Action:** Provide a one-sentence solution …"
+  },
+  {
+    "title": "Team Objectives",
+    "prompt": "❗️ **Action:** What are the team’s main objectives …"
+  },
+  {
+    "title": "Wrap-Up",
+    "prompt": "Thank you for participating in this mentor meeting! …"
+  }
+]
