@@ -82,8 +82,16 @@ if not session_id:
 
 
 # use CHAT_HISTORY_DIR if set, otherwise write under Render’s persistent disk
-data_dir = os.getenv("CHAT_HISTORY_DIR", "/mnt/data/faiss_index/chat_history")
+#data_dir = os.getenv("CHAT_HISTORY_DIR", "/mnt/data/faiss_index/chat_history")
+#os.makedirs(data_dir, exist_ok=True)
+
+# use CHAT_HISTORY_DIR if set, otherwise write under a local ./data folder
+data_dir = os.getenv(
+    "CHAT_HISTORY_DIR",
+    os.path.join(os.getcwd(), "data", "faiss_index", "chat_history"),
+)
 os.makedirs(data_dir, exist_ok=True)
+
 
 
 history_file = os.path.join(data_dir, f"{team}_{session_id}_history.json")
