@@ -1,0 +1,36 @@
+
+
+[
+  {
+    "title": "A Standard Mentor Meeting",
+    "prompt": "Hi there, SAVI here. How are you all doing?/n/n …" 
+    "Welcome to this mentor meeting! In this meeting:
+    -We will review your progress
+    -We wlll try and help you get unstuck if need be
+    -We can talk about some of my experiences and how they might be relevant"
+    "If you are ready to get started, please type: `Yes`"
+  },
+  {
+    "title": "Welcome & Introductions",
+    "prompt": "❗️ **Action:** Enter each team member’s full name …"
+  },
+  {
+    "title": "Problem Statement",
+    "prompt": "❗️ **Action:** Provide a one-sentence problem …"
+  },
+  {
+    "title": "Solution Overview",
+    "prompt": "❗️ **Action:** Provide a one-sentence solution …"
+  },
+  {
+    "title": "Team Objectives",
+    "prompt": "❗️ **Action:** What are the team’s main objectives …"
+  },
+  {
+    "title": "Wrap-Up",
+    "prompt": "Thank you for participating in this mentor meeting! …"
+  }
+]
+
+
+Thanks! Please fill in the short post-meeting reflection form at: [your-link-here]
