@@ -49,22 +49,31 @@ MENTOR_SYSTEM_PROMPT = {
         "Wait for the team to decide when to move on by typing 'Next'."
     ),
 }
-
+# Agendas are loaded dynamically from meeting_scripts/*.json
 # ---------- AGENDA ----------
-AGENDA = load_agenda("kickoff")
-if AGENDA is None:
-    st.error("Couldn't find meeting_scripts/kickoff.json")
-    st.stop()
+#AGENDA = load_agenda("kickoff")
+#if AGENDA is None:
+#    st.error("Couldn't find meeting_scripts/kickoff.json")
+#   st.stop()
 
 # ---------- AUTHENTICATION & SESSION ----------
 if "team" not in st.session_state:
     name = st.text_input("Team name")
     pw = st.text_input("Password", type="password")
+    meetings = ["General Conversation"] + [
+        f[:-5] for f in os.listdir("meeting_scripts") if f.endswith(".json")
+    ]
+    meeting_type = st.selectbox("Meeting type", meetings)
     login_clicked = st.button("Login")
     if login_clicked:
         if pw == "guideme":
             st.session_state.team = name
             st.session_state.session_id = datetime.now().strftime("%Y%m%dT%H%M%S")
+            st.session_state.meeting_type = meeting_type
+            if meeting_type == "General Conversation":
+                st.session_state.agenda = None
+            else:
+                st.session_state.agenda = load_agenda(meeting_type)
             st.rerun()
         else:
             st.error("Invalid credentials")
@@ -75,6 +84,14 @@ session_id = st.session_state.get("session_id")
 if not session_id:
     st.session_state.session_id = datetime.now().strftime("%Y%m%dT%H%M%S")
     session_id = st.session_state.session_id
+
+if "agenda" not in st.session_state:
+    mt = st.session_state.get("meeting_type")
+    if mt == "General Conversation":
+        st.session_state.agenda = None
+    elif mt:
+        st.session_state.agenda = load_agenda(mt)
+   
 
 #data_dir = "data" Delee these 3 lines when working
 # use an env var if set, otherwise default to ./data
@@ -101,7 +118,10 @@ if "step" not in st.session_state:
     st.session_state.step = 0
 
 if "state" not in st.session_state:
-    st.session_state.state = "awaiting_agenda_prompt"  # or "awaiting_team_input", "awaiting_next_action", "meeting_done"
+    if st.session_state.get("agenda"):
+        st.session_state.state = "awaiting_agenda_prompt"
+    else:
+        st.session_state.state = "awaiting_team_input"
 
 if "history" not in st.session_state:
     st.session_state.history = [MENTOR_SYSTEM_PROMPT]
@@ -110,9 +130,13 @@ if "history" not in st.session_state:
 
 # ---------- SIDEBAR ----------
 st.sidebar.title("Agenda")
-for idx, item in enumerate(AGENDA):
-    marker = "➡️" if idx == st.session_state.step else "  "
-    st.sidebar.write(f"{marker} Step {idx+1}: {item['title']}")
+agenda = st.session_state.get("agenda")
+if agenda:
+    for idx, item in enumerate(agenda):
+        marker = "➡️" if idx == st.session_state.step else "  "
+        st.sidebar.write(f"{marker} Step {idx+1}: {item['title']}")
+else:
+    st.sidebar.write("No agenda selected.")
 
 i = st.session_state.step
 
@@ -136,8 +160,8 @@ for msg in st.session_state.history[1:]:
 
 
 # Show initial agenda prompt (only once per agenda step)
-if st.session_state.state == "awaiting_agenda_prompt":
-    add_mentor_message(AGENDA[i]["prompt"])
+if st.session_state.state == "awaiting_agenda_prompt" and agenda:
+    add_mentor_message(agenda[i]["prompt"])
     st.session_state.state = "awaiting_team_input"
     st.rerun()
 
@@ -161,11 +185,11 @@ if user_input is not None and user_input.strip():
                 st.session_state.state = "awaiting_agenda_prompt"
                 st.rerun()
             else:
-                # If not "yes", prompt again
+              
                 add_mentor_message("Please type exactly: `Yes` to start the meeting.")
                 st.rerun()
         else:
-            # For all other agenda steps
+          
             snippets = search_books(response)
             context_msgs = []
             if snippets:
@@ -182,24 +206,29 @@ if user_input is not None and user_input.strip():
             )
             mentor_reply = resp.choices[0].message.content
             add_mentor_message(mentor_reply)
-            # Now ask if want to discuss more or move on
-            add_mentor_message(
-                "Would you like to discuss this topic further, or move to the next stage of the meeting?\n\n"
-                "👉 Type your next comment, reply or question to continue, or type **Next** to move on to next meeting stage."
-            )
-            st.session_state.state = "awaiting_next_action"
+            if agenda:
+                add_mentor_message(
+                    "Would you like to discuss this topic further, or move to the next stage of the meeting?\n\n"
+                    "👉 Type your next comment, reply or question to continue, or type **Next** to move on to next meeting stage."
+                )
+                st.session_state.state = "awaiting_next_action"
+            else:
+                st.session_state.state = "awaiting_team_input"
             st.rerun()
 
     elif st.session_state.state == "awaiting_next_action":
         # Only advance step if user says "next" etc. (NEVER advance from the very first step)
-        if response.lower().strip() in ["next", "yes", "continue", "go next", "y"]:
-            add_user_message(response)  # record the user's request to advance 
-            if st.session_state.step < len(AGENDA) - 1:
+        if response.lower().strip() in ["next", "yes", "continue", "go next", "y"] and agenda:
+            add_user_message(response)  # record the user's request to advance
+            if st.session_state.step < len(agenda) - 1:
                 st.session_state.step += 1
                 st.session_state.state = "awaiting_agenda_prompt"
                 st.rerun()
             else:
-                add_mentor_message("Meeting complete! Thank you for your participation. 🎉.\n\n" "Click Next again and you will be taken to the Google form to complete at the end of every mentor meeting")
+                add_mentor_message(
+                    "Meeting complete! Thank you for your participation. 🎉.\n\n"
+                    "Click Next again and you will be taken to the Google form to complete at the end of every mentor meeting"
+                )
                 st.session_state.state = "meeting_done"
                 st.rerun()
         else:
@@ -220,11 +249,12 @@ if user_input is not None and user_input.strip():
             )
             mentor_reply = resp.choices[0].message.content
             add_mentor_message(mentor_reply)
-            add_mentor_message(
-                "Would you like to keep discussing, or move to the next step?\n\n"
-                "Type your next comment, or **Next** to move on."
-            )
-            st.session_state.state = "awaiting_next_action"
+            if agenda:
+                add_mentor_message(
+                    "Would you like to keep discussing, or move to the next step?\n\n"
+                    "Type your next comment, or **Next** to move on."
+                )
+                st.session_state.state = "awaiting_next_action"
             st.rerun()
 
     elif st.session_state.state == "meeting_done":
