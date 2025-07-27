@@ -160,7 +160,7 @@ if user_input:
 
         if agenda:
             add_mentor_message(
-                "Would you like to discuss this topic further, or move to the next stage of the meeting?\n\n"
+                "Would you like to move to the next stage of the agenda or continue to discuss this topic further?\n\n"
                 "👉 Type your next comment, reply or question to continue, or type **Next** to move on."
             )
             st.session_state.state = "awaiting_next_action"
