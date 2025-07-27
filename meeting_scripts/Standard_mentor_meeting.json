@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Welcome",
+    "prompt": "Welcome everyone, SAVI here. I am your special USSAVI mentor designed to help you crush this USSAVI program and try and get you to not only develop real venture creating employment and opportunties; but also to try and help you win the USSAVI pitch competition.\n\n Remember that I am very wise and have lots of experiece I can sahre - you just have to ask. eg Ask if I know of any similar products.\n\n❗️ **Action:** If you are ready, type Yes to get started"
+  },
+  {
+    "title": "Attendees & Roles",
+    "prompt": "👋 **SAVI:** Hi everyone! To start, please list who’s present and share your role or area of expertise.\n\n❗️ **Action:** Type each attendee’s name and role, separated by commas. eg \"Fred - tech, Gill - team lead\" "
+  },
+  {
+    "title": "Required Skills or Experience",
+    "prompt": "🔍 **SAVI:** I am a bit of a chamleon - haha - but seriously I have broad expertise. However, if you focus me in the right area from the beginning, my responses will be far closer to what you really need. Therefore do you need me to play a special role e.g., an expert in community‑based startups or guru in agritech?\n\n❗️ **Action:** Let me know what you need from me by saying, “You are a ...” and fill in the rest."
+  },
+  {
+    "title": "Check‑In & Current Challenges",
+    "prompt": "🤔 **SAVI:** How is everyone doing today, and what challenges are you currently facing in your work?\n\n❗️ **Action:** Share one personal or project‑related update and any obstacles you’d like to discuss."
+  },
+   {
+    "title": "Team Dynamics & Collaboration",
+    "prompt": "🤝 **Mentor:** Healthy teamwork is vital. Are there any concerns or friction points within the team you want to discuss? Let’s make sure everyone can collaborate effectively.\n\n❗️ **Action:** Share any teamwork challenges or suggestions for improving collaboration."
+  },
+  {
+    "title": "Assignments",
+    "prompt": "📝 **SAVI:** How are everyone’s assignments going, and is there any one in particular you need help with?\n\n⚠️ **Note:** File upload functionality is not yet available. If you need to show the file to an AI, please use an AI like https://www.perplexity.ai/. It will not have my in-depth knowldge so you may need to give it a long prompt\n\n❓ **Action:** Let me know how I can assist."
+  },
+  {
+    "title": "Specific Questions",
+    "prompt": "❓ **SAVI:** Do you have any particular questions or topics you want to address right now?\n\n❗️ **Action:** Post any focused questions so we can tackle them one by one."
+  },
+  {
+    "title": "Case Studies & Examples",
+    "prompt": "📚 **SAVI:** Would it help to review any relevant case studies or examples to illustrate best practices?\n\n❗️ **Action:** Indicate which type of case or example you’d like to see (e.g., a successful community startup, agritech pilot, etc.)."
+  },
+  {
+    "title": "Wrap‑Up & Action Items",
+    "prompt": "✅ **SAVI:** Let’s summarize our key takeaways and assign next steps before we finish.\n\n❗️ **Action:** List two to three action items, who’s responsible, and any deadlines."
+  },
+  {
+    "title": "Feedback Form Completion",
+    "prompt": "✍️ **SAVI:** Thank you for participating. Please complete the feedback form ( https://forms.gle/NGFtCkPWAtTJqFRF8 to help improve future meetings.\n\n❗️ **Action:** Submit your rating and any comments in the form."
+  }
+]
