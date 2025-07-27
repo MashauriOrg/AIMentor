@@ -56,14 +56,13 @@ MENTOR_SYSTEM_PROMPT = {
 
 # ---------- AUTHENTICATION & SESSION ----------
 if "team" not in st.session_state:
+    # Login form
     name = st.text_input("Team name")
     pw = st.text_input("Password", type="password")
     st.write("Please select your meeting type from the dropdown list")
+    # List available meeting scripts directly
     scripts = [f[:-5] for f in os.listdir(MEETING_SCRIPTS_DIR) if f.endswith(".json")]
-    if "General Conversation" in scripts:
-        scripts.remove("General Conversation")
-    meetings = ["General Conversation"] + scripts
-    meeting_type = st.selectbox("Meeting type", meetings)
+    meeting_type = st.selectbox("Meeting type", scripts)
     if st.button("Login"):
         if pw == "guideme":
             st.session_state.team = name
