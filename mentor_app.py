@@ -175,16 +175,24 @@ if user_input:
                 next_title = agenda[1]["title"] if len(agenda) > 1 else "next step"
                 add_mentor_message(
                     f"Great - lets get this meeting started then, I am excited to be working with you today. Type Next and we can move into the {next_title} step"
-                 )
+                )
+                st.session_state.state = "awaiting_next_action"
             else:
-                add_mentor_message(
-                    "Would you like to move to the next stage of the agenda or continue to discuss this topic further?\n\n"
-                    "👉 Type your next comment, reply or question to continue, or type **Next** to move on."
-                )                   
-            st.session_state.state = "awaiting_next_action"
+                if (
+                    st.session_state.get("meeting_type") == "General_conversation"
+                    and st.session_state.step > 0
+                ):
+                    st.session_state.state = "awaiting_team_input"
+                else:
+                    add_mentor_message(
+                        "Would you like to move to the next stage of the agenda or continue to discuss this topic further?\n\n"
+                        "👉 Type your next comment, reply or question to continue, or type **Next** to move on."
+                    )
+                    st.session_state.state = "awaiting_next_action"
+            st.rerun()
         else:
             st.session_state.state = "awaiting_team_input"
-        st.rerun()
+            st.rerun()
 
     if st.session_state.state == "awaiting_next_action":
         if response.lower() in ["next", "yes", "continue", "go next", "y"] and agenda:
@@ -212,10 +220,16 @@ if user_input:
             )
             mentor_reply = resp.choices[0].message.content
             add_mentor_message(mentor_reply)
-            add_mentor_message(
-                "Would you like to keep discussing, or move to the next step?\n\n"
-                "Type your next comment, or **Next** to move on."
-            )
+            if (
+                st.session_state.get("meeting_type") == "General_conversation"
+                and st.session_state.step > 0
+            ):
+                st.session_state.state = "awaiting_team_input"
+            else:
+                add_mentor_message(
+                    "Would you like to keep discussing, or move to the next step?\n\n"
+                    "Type your next comment, or **Next** to move on."
+                )
             st.rerun()
 
     if st.session_state.state == "meeting_done":
