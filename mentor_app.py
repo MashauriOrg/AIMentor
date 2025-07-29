@@ -26,7 +26,7 @@ with col1:
     st.image("Mashauri_logo.png", width=75)
 with col2:
     st.markdown(
-        "<h1 style='margin-bottom:0;'>👥 SAVI<br/>(your USSAVI AI Mentor)</h1>",
+        "<h1 style='margin-bottom:0;'> SAVI<br/>(your USSAVI AI Mentor)</h1>",
         unsafe_allow_html=True,
     )
 with col3:
@@ -172,7 +172,7 @@ if user_input:
 
         if agenda:
             add_mentor_message(
-                "Would you like to move to the next stage of the agenda or continue to discuss this topic further?\n\n"
+ #               "Would you like to move to the next stage of the agenda or continue to discuss this topic further?\n\n"
                 "👉 Type your next comment, reply or question to continue, or type **Next** to move on."
             )
             st.session_state.state = "awaiting_next_action"
