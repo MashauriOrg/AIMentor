@@ -151,13 +151,13 @@ if user_input:
     mt = st.session_state.get("meeting_type", "")
 
     if st.session_state.state == "awaiting_team_input":
-        if is_first and agenda and mt != "General Conversation" and response.lower() != "yes":
+        if is_first and agenda and response.lower() != "yes":
             add_mentor_message("Please type exactly: `Yes` to start the meeting.")
             st.rerun()
 
         snippets = []
         context_msgs = []
-        if response and not (is_first and agenda and mt != "General Conversation"):
+        if response and not (is_first and agenda):
             snippets = search_books(response)
             if snippets:
                 excerpts = "\n---\n".join(snippets)
@@ -171,10 +171,16 @@ if user_input:
             add_mentor_message(mentor_reply)
 
         if agenda:
-            add_mentor_message(
- #               "Would you like to move to the next stage of the agenda or continue to discuss this topic further?\n\n"
-                "👉 Type your next comment, reply or question to continue, or type **Next** to move on."
-            )
+            if is_first and response.lower() == "yes":
+                next_title = agenda[1]["title"] if len(agenda) > 1 else "next step"
+                add_mentor_message(
+                    f"Great - lets get this meeting started then, I am excited to be working with you today. Type Next and we can move into the {next_title} step"
+                 )
+            else:
+                add_mentor_message(
+                    "Would you like to move to the next stage of the agenda or continue to discuss this topic further?\n\n"
+                    "👉 Type your next comment, reply or question to continue, or type **Next** to move on."
+                )                   
             st.session_state.state = "awaiting_next_action"
         else:
             st.session_state.state = "awaiting_team_input"
