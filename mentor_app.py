@@ -4,9 +4,11 @@ from datetime import datetime
 import streamlit as st
 from openai import OpenAI
 from book_retrieval import search_books
+import PyPDF2
 
 # ---------- CONFIGURATION ----------
 MEETING_SCRIPTS_DIR = "meeting_scripts"
+MAX_UPLOAD_SIZE = 1 * 1024 * 1024  # 1 MB
 
 # ---------- UTILITIES ----------
 def load_agenda(meeting_name: str) -> list[dict] | None:
@@ -107,6 +109,8 @@ if "history" not in st.session_state:
     st.session_state.history = [MENTOR_SYSTEM_PROMPT]
     with open(history_file, "w", encoding="utf-8") as f:
         json.dump(st.session_state.history, f, indent=2)
+if "last_uploaded" not in st.session_state:
+    st.session_state.last_uploaded = None
 
 # ---------- SIDEBAR ----------
 st.sidebar.title("Agenda")
@@ -134,6 +138,22 @@ def add_user_message(text: str):
 for msg in st.session_state.history[1:]:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
+
+# ---------- FILE UPLOAD ----------
+uploaded_file = st.file_uploader(
+    "Upload a PDF for context (max 1 MB)", type="pdf"
+)
+if uploaded_file:
+    if uploaded_file.size > MAX_UPLOAD_SIZE:
+        st.error("File too large. Please select a file under 1 MB.")
+    elif uploaded_file.name != st.session_state.last_uploaded:
+        reader = PyPDF2.PdfReader(uploaded_file)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() or ""
+        add_user_message(f"[Uploaded PDF excerpt]\n{text[:2000]}")
+        st.session_state.last_uploaded = uploaded_file.name
+        st.rerun()
 
 # ---------- AGENDA PROMPT ----------
 if st.session_state.state == "awaiting_agenda_prompt" and agenda:
