@@ -141,17 +141,40 @@ for msg in st.session_state.history[1:]:
 
 # ---------- FILE UPLOAD ----------
 uploaded_file = st.file_uploader(
-    "Upload a PDF for context (max 1 MB)", type="pdf"
+    "Upload a document for context (PDF, DOCX, XLSX, CSV, PNG, JPG; max 1 MB)",
+    type=["pdf", "docx", "xlsx", "csv", "png", "jpg", "jpeg"],
 )
 if uploaded_file:
     if uploaded_file.size > MAX_UPLOAD_SIZE:
         st.error("File too large. Please select a file under 1 MB.")
     elif uploaded_file.name != st.session_state.last_uploaded:
-        reader = PyPDF2.PdfReader(uploaded_file)
+        ext = os.path.splitext(uploaded_file.name)[1].lower()
         text = ""
-        for page in reader.pages:
-            text += page.extract_text() or ""
-        add_user_message(f"[Uploaded PDF excerpt]\n{text[:2000]}")
+        if ext == ".pdf":
+            reader = PyPDF2.PdfReader(uploaded_file)
+            for page in reader.pages:
+                text += page.extract_text() or ""
+        elif ext == ".docx":
+            import docx
+
+            doc = docx.Document(uploaded_file)
+            text = "\n".join(par.text for par in doc.paragraphs)
+        elif ext in [".xlsx", ".csv"]:
+            import pandas as pd
+
+            uploaded_file.seek(0)
+            if ext == ".csv":
+                df = pd.read_csv(uploaded_file)
+            else:
+                df = pd.read_excel(uploaded_file)
+            text = df.to_csv(index=False)
+        elif ext in [".png", ".jpg", ".jpeg"]:
+            from PIL import Image
+            import pytesseract
+
+            image = Image.open(uploaded_file)
+            text = pytesseract.image_to_string(image)
+        add_user_message(f"[Uploaded file excerpt]\n{text[:2000]}")
         st.session_state.last_uploaded = uploaded_file.name
         st.rerun()
 
