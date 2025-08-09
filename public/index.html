@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Chat</title>
+  </head>
+  <body>
+    <div class="chat-input">
+      <button id="attachBtn">+</button>
+      <input type="file" id="fileInput" style="display:none" accept=".pdf,.txt,.jpg,.png" />
+      <input type="text" id="messageInput" placeholder="Type your message…" />
+      <button id="sendBtn">Send</button>
+    </div>
+    <script>
+      const attachBtn = document.getElementById('attachBtn');
+      const fileInput = document.getElementById('fileInput');
+
+      attachBtn.addEventListener('click', () => fileInput.click());
+
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        console.log(`Selected file: ${file.name}`);
+      });
+
+      async function sendMessage() {
+        const text = document.getElementById('messageInput').value;
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('text', text);
+        if (file) formData.append('file', file);
+
+        await fetch('/chat', { method: 'POST', body: formData });
+      }
+
+      document.getElementById('sendBtn').addEventListener('click', sendMessage);
+    </script>
+  </body>
+</html>
