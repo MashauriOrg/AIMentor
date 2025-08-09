@@ -1,0 +1,97 @@
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..b4597fabb4f045d2d315bddf37ae7244cc8ef437
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,10 @@
++{
++  "name": "aimmentor-node",
++  "version": "1.0.0",
++  "type": "module",
++  "dependencies": {
++    "express": "^4.18.2",
++    "multer": "^1.4.5-lts.1",
++    "openai": "^4.0.0"
++  }
++}
+diff --git a/public/index.html b/public/index.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..4d2e197fa58ca272c79b4317dd246f250e1bc1f3
+--- /dev/null
++++ b/public/index.html
+@@ -0,0 +1,38 @@
++<!DOCTYPE html>
++<html>
++  <head>
++    <meta charset="utf-8" />
++    <title>Chat</title>
++  </head>
++  <body>
++    <div class="chat-input">
++      <button id="attachBtn">+</button>
++      <input type="file" id="fileInput" style="display:none" accept=".pdf,.txt,.jpg,.png" />
++      <input type="text" id="messageInput" placeholder="Type your message…" />
++      <button id="sendBtn">Send</button>
++    </div>
++    <script>
++      const attachBtn = document.getElementById('attachBtn');
++      const fileInput = document.getElementById('fileInput');
++
++      attachBtn.addEventListener('click', () => fileInput.click());
++
++      fileInput.addEventListener('change', () => {
++        const file = fileInput.files[0];
++        console.log(`Selected file: ${file.name}`);
++      });
++
++      async function sendMessage() {
++        const text = document.getElementById('messageInput').value;
++        const file = fileInput.files[0];
++        const formData = new FormData();
++        formData.append('text', text);
++        if (file) formData.append('file', file);
++
++        await fetch('/chat', { method: 'POST', body: formData });
++      }
++
++      document.getElementById('sendBtn').addEventListener('click', sendMessage);
++    </script>
++  </body>
++</html>
+diff --git a/server.js b/server.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..57279b7d2469de66b1cd313e7a05d4b042c2d28a
+--- /dev/null
++++ b/server.js
+@@ -0,0 +1,31 @@
++import express from "express";
++import multer from "multer";
++import OpenAI from "openai";
++
++const app = express();
++const upload = multer();
++const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
++
++app.post("/chat", upload.single("file"), async (req, res) => {
++  const text = req.body.text;
++  const fileBuffer = req.file?.buffer;
++
++  let fileId;
++  if (fileBuffer) {
++    const up = await client.files.create({
++      file: fileBuffer,
++      purpose: "assistants"
++    });
++    fileId = up.id;
++  }
++
++  const response = await client.chat.completions.create({
++    model: "gpt-4.1",
++    messages: [{ role: "user", content: text }],
++    ...(fileId && { files: [fileId] })
++  });
++
++  res.json({ reply: response.choices[0].message.content });
++});
++
++app.listen(3000);
