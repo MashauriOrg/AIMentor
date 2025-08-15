@@ -7,23 +7,30 @@
   <body>
     <div class="chat-input">
       <button id="attachBtn">+</button>
-      <input type="file" id="fileInput" style="display:none" accept=".pdf,.txt,.jpg,.png" />
+      <input
+        type="file"
+        id="fileInput"
+        style="display:none"
+        accept=".pdf,.txt,.jpg,.png"
+      />
       <input type="text" id="messageInput" placeholder="Type your message…" />
       <button id="sendBtn">Send</button>
     </div>
     <script>
       const attachBtn = document.getElementById('attachBtn');
       const fileInput = document.getElementById('fileInput');
+      const messageInput = document.getElementById('messageInput');
+      const sendBtn = document.getElementById('sendBtn');
 
       attachBtn.addEventListener('click', () => fileInput.click());
 
       fileInput.addEventListener('change', () => {
         const file = fileInput.files[0];
-        console.log(`Selected file: ${file.name}`);
+        if (file) console.log(`Selected file: ${file.name}`);
       });
 
       async function sendMessage() {
-        const text = document.getElementById('messageInput').value;
+        const text = messageInput.value;
         const file = fileInput.files[0];
         const formData = new FormData();
         formData.append('text', text);
@@ -32,7 +39,7 @@
         await fetch('/chat', { method: 'POST', body: formData });
       }
 
-      document.getElementById('sendBtn').addEventListener('click', sendMessage);
+      sendBtn.addEventListener('click', sendMessage);
     </script>
   </body>
 </html>
