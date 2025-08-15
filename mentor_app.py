@@ -161,10 +161,10 @@ if st.session_state.state == "awaiting_agenda_prompt" and agenda:
 if "user_input" not in st.session_state:
     st.session_state.user_input = ""
 
-user_input = st.text_area("Your message here...", key="user_input", height=100)
-send_clicked = st.button("Send")
-if send_clicked and user_input:
-    response = user_input.strip()
+def handle_send():
+    response = st.session_state.user_input.strip()
+    if not response:
+        return
     st.session_state.user_input = ""
     add_user_message(response)
 
@@ -258,3 +258,7 @@ if send_clicked and user_input:
             "This meeting is finished! You can review the chat above or close the page\n\n "
             "Please complete the post meeting Google form https://docs.google.com/forms/d/e/1FAIpQLSc0QN87pDYQVamKVpYtUQyfO9qPq0CWrMjc5-kqLMZ4HawILg/viewform?usp=preview"
         )
+    st.rerun()
+
+st.text_area("Your message here...", key="user_input", height=100)
+st.button("Send", on_click=handle_send)
