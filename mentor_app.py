@@ -158,15 +158,26 @@ if st.session_state.state == "awaiting_agenda_prompt" and agenda:
     st.rerun()
 
 # ---------- USER INPUT ----------
+# Track the contents of the text area in session state.
 if "user_input" not in st.session_state:
     st.session_state.user_input = ""
+
+# Flag to clear the input box on the next run. We set a flag instead of
+# modifying `st.session_state.user_input` directly after the widget is
+# instantiated, which Streamlit disallows outside the widget's own callback.
+if "clear_input" not in st.session_state:
+    st.session_state.clear_input = False
+if st.session_state.clear_input:
+    st.session_state.user_input = ""
+    st.session_state.clear_input = False
 
 def handle_send():
     response = st.session_state.user_input.strip()
     if not response:
         return
-    st.session_state.user_input = ""
     add_user_message(response)
+    # Mark that the text area should be cleared before the next render
+    st.session_state.clear_input = True
 
     is_first = st.session_state.step == 0
     mt = st.session_state.get("meeting_type", "")
