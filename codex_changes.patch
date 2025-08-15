@@ -1,0 +1,54 @@
+diff --git a/public/index.html b/public/index.html
+index 4d2e197fa58ca272c79b4317dd246f250e1bc1f3..76e1c11f3f4ff4fc0531af3a96c45f12eb7ed140 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -1,38 +1,45 @@
+ <!DOCTYPE html>
+ <html>
+   <head>
+     <meta charset="utf-8" />
+     <title>Chat</title>
+   </head>
+   <body>
+     <div class="chat-input">
+       <button id="attachBtn">+</button>
+-      <input type="file" id="fileInput" style="display:none" accept=".pdf,.txt,.jpg,.png" />
++      <input
++        type="file"
++        id="fileInput"
++        style="display:none"
++        accept=".pdf,.txt,.jpg,.png"
++      />
+       <input type="text" id="messageInput" placeholder="Type your message…" />
+       <button id="sendBtn">Send</button>
+     </div>
+     <script>
+       const attachBtn = document.getElementById('attachBtn');
+       const fileInput = document.getElementById('fileInput');
++      const messageInput = document.getElementById('messageInput');
++      const sendBtn = document.getElementById('sendBtn');
+ 
+       attachBtn.addEventListener('click', () => fileInput.click());
+ 
+       fileInput.addEventListener('change', () => {
+         const file = fileInput.files[0];
+-        console.log(`Selected file: ${file.name}`);
++        if (file) console.log(`Selected file: ${file.name}`);
+       });
+ 
+       async function sendMessage() {
+-        const text = document.getElementById('messageInput').value;
++        const text = messageInput.value;
+         const file = fileInput.files[0];
+         const formData = new FormData();
+         formData.append('text', text);
+         if (file) formData.append('file', file);
+ 
+         await fetch('/chat', { method: 'POST', body: formData });
+       }
+ 
+-      document.getElementById('sendBtn').addEventListener('click', sendMessage);
++      sendBtn.addEventListener('click', sendMessage);
+     </script>
+   </body>
+ </html>
