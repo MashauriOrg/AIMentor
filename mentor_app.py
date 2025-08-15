@@ -20,6 +20,22 @@ def load_agenda(meeting_name: str) -> list[dict] | None:
 # ---------- PAGE SETUP ----------
 st.set_page_config(page_title="Mashauri AI Mentor", layout="centered")
 
+# ---------- STYLING ----------
+st.markdown(
+    """
+    <style>
+    /* Increase default font size for readability */
+    div[data-testid="stChatMessage"] p, .stMarkdown p {
+        font-size: 1.1rem;
+    }
+    textarea, input {
+        font-size: 1.1rem !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # ---------- HEADER ----------
 col1, col2, col3 = st.columns([1, 6, 1])
 with col1:
@@ -142,9 +158,14 @@ if st.session_state.state == "awaiting_agenda_prompt" and agenda:
     st.rerun()
 
 # ---------- USER INPUT ----------
-user_input = st.chat_input("Your message here...")
-if user_input:
+if "user_input" not in st.session_state:
+    st.session_state.user_input = ""
+
+user_input = st.text_area("Your message here...", key="user_input", height=100)
+send_clicked = st.button("Send")
+if send_clicked and user_input:
     response = user_input.strip()
+    st.session_state.user_input = ""
     add_user_message(response)
 
     is_first = st.session_state.step == 0
