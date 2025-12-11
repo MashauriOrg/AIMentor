@@ -53,3 +53,27 @@ Make sure `data/` is git-ignored and, in production (e.g. on Render), set:
 ```bash
 render env set CHAT_HISTORY_DIR=/mnt/data/chat_history
 
+
+## Transcribing M4A files with Whisper
+
+Follow these steps to turn an M4A audio file into text using the `transcribe_m4a.py` helper:
+
+1. **Install Python packages** (from this project root):
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. **Add your OpenAI key** to the terminal environment (replace the placeholder with your key):
+   ```bash
+   export OPENAI_API_KEY=your_real_api_key_here
+   ```
+3. **Run the script** with your M4A path and where you want the transcript saved:
+   ```bash
+   python transcribe_m4a.py --input /full/path/to/audio.m4a --output /full/path/to/transcript.txt
+   ```
+   - If you skip `--output`, the text will simply print in the terminal.
+4. *(Optional)* Tweak accuracy or language:
+   - `--model` chooses a Whisper model (default: `whisper-1`).
+   - `--prompt` supplies extra context for the model.
+   - `--language` hints the spoken language (for example, `en` for English or `es` for Spanish).
+
+That’s it—once the command finishes, open the `transcript.txt` file (or the printed output) to read the text version of your audio file.
