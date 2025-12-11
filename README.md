@@ -53,3 +53,27 @@ Make sure `data/` is git-ignored and, in production (e.g. on Render), set:
 ```bash
 render env set CHAT_HISTORY_DIR=/mnt/data/chat_history
 
+
+## Transcribing MP4 files with Whisper
+
+Follow these steps to turn an MP4 file into text using the `transcribe_mp4.py` helper:
+
+1. **Install Python packages** (from this project root):
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. **Add your OpenAI key** to the terminal environment (replace the placeholder with your key):
+   ```bash
+   export OPENAI_API_KEY=your_real_api_key_here
+   ```
+3. **Run the script** with your MP4 path and where you want the transcript saved:
+   ```bash
+   python transcribe_mp4.py --input /full/path/to/video.mp4 --output /full/path/to/transcript.txt
+   ```
+   - If you skip `--output`, the text will simply print in the terminal.
+4. *(Optional)* Tweak accuracy or language:
+   - `--model` chooses a Whisper model (default: `whisper-1`).
+   - `--prompt` supplies extra context for the model.
+   - `--language` hints the spoken language (for example, `en` for English or `es` for Spanish).
+
+That’s it—once the command finishes, open the `transcript.txt` file (or the printed output) to read the text version of your video.
